@@ -50,7 +50,7 @@ def color_split(img):
     cv2.imshow('lenna_R', R)
 
 
-def random_light_color_channel(channel):
+def random_light_channel_color(channel):
     """
     随机亮化一个通道
     """
@@ -74,9 +74,9 @@ def random_light_color(img):
     随机亮化图片
     """
     B, G, R = cv2.split(img)
-    random_light_color_channel(B)
-    random_light_color_channel(G)
-    random_light_color_channel(R)
+    random_light_channel_color(B)
+    random_light_channel_color(G)
+    random_light_channel_color(R)
     img_merge = cv2.merge((B, G, R))
     return img_merge
 
