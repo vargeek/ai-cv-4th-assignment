@@ -18,7 +18,7 @@
     python q2_augmentation.py path/to/file1 path/to/file2 ...
     ```
 
-  源文件中定义的 `crop_image`, `light_color`, `gamma_correction`, `equalize_y_hist`, `rotate_image`, `perspective_transform_image` 函数等分别对图片进行“裁剪”、“亮化”、“gamma校正”等处理。  
+  源文件中定义的 `crop_image`, `light_color`, `gamma_correction`, `equalize_y_hist`, `rotate_image`, `perspective_transform_image` 等函数分别对图片进行“裁剪”、“亮化”、“gamma校正”等处理。  
   `random_augmentation` 函数将这几个处理组合起来。
 
 ---
