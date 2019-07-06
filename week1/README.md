@@ -23,10 +23,12 @@
 
 ---
 
-- [ ] 3. Do think about your own interests very carefully and choose your topic within 3 weeks.
+- [x] 3. Do think about your own interests very carefully and choose your topic within 3 weeks.
+
+  Image Transfer, GAN
 ---
 
-- [ ] 4. 【Please send answers to those questions to mqgao@kaikeba.com】  
+- [x] 4. 【Please send answers to those questions to mqgao@kaikeba.com】  
   Please answer some questions about our course. We do appreciate your help.  
   4.1 What do you want to get in this course?  
   4.2 What problems do you want to solve?  
