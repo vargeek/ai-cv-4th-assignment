@@ -1,101 +1,83 @@
-import os
-import sys
-from c1_median_blur import *
+import c1_median_blur as c1
 import numpy as np
-import cv2
+import unittest
 
 
-def test_replicaPaddingIndex():
-    row = 4
-    col = 5
-    img = np.arange(0, row * col).reshape(row, col)
-    assert(replicaPaddingIndex(img, -1, -1) == 0)
-    assert(replicaPaddingIndex(img, 2, -1) == 10)
-    assert(replicaPaddingIndex(img, 2, col) == 14)
-    assert(replicaPaddingIndex(img, 2, col+1) == 14)
-    assert(replicaPaddingIndex(img, -1, 2) == 2)
-    assert(replicaPaddingIndex(img, row, 2) == 17)
-    assert(replicaPaddingIndex(img, row+1, 2) == 17)
+class Test(unittest.TestCase):
+    def test_replicaPaddingIndex(self):
+        row = 4
+        col = 5
+        img = np.arange(0, row * col).reshape(row, col)
+        self.assertEqual(c1.replicaPaddingIndex(img, -1, -1), 0)
+        self.assertEqual(c1.replicaPaddingIndex(img, 2, -1), 10)
+        self.assertEqual(c1.replicaPaddingIndex(img, 2, col), 14)
+        self.assertEqual(c1.replicaPaddingIndex(img, 2, col+1), 14)
+        self.assertEqual(c1.replicaPaddingIndex(img, -1, 2), 2)
+        self.assertEqual(c1.replicaPaddingIndex(img, row, 2), 17)
+        self.assertEqual(c1.replicaPaddingIndex(img, row+1, 2), 17)
 
+    def test_zeroPaddingIndex(self):
+        row = 4
+        col = 5
+        img = np.arange(0, row * col).reshape(row, col)
+        self.assertEqual(c1.zeroPaddingIndex(img, -1, -1), 0)
+        self.assertEqual(c1.zeroPaddingIndex(img, 2, -1), 0)
+        self.assertEqual(c1.zeroPaddingIndex(img, 2, col), 0)
+        self.assertEqual(c1.zeroPaddingIndex(img, 2, col+1), 0)
+        self.assertEqual(c1.zeroPaddingIndex(img, -1, 2), 0)
+        self.assertEqual(c1.zeroPaddingIndex(img, row, 2), 0)
+        self.assertEqual(c1.zeroPaddingIndex(img, row+1, 2), 0)
 
-def test_zeroPaddingIndex():
-    row = 4
-    col = 5
-    img = np.arange(0, row * col).reshape(row, col)
-    assert(zeroPaddingIndex(img, -1, -1) == 0)
-    assert(zeroPaddingIndex(img, 2, -1) == 0)
-    assert(zeroPaddingIndex(img, 2, col) == 0)
-    assert(zeroPaddingIndex(img, 2, col+1) == 0)
-    assert(zeroPaddingIndex(img, -1, 2) == 0)
-    assert(zeroPaddingIndex(img, row, 2) == 0)
-    assert(zeroPaddingIndex(img, row+1, 2) == 0)
+    def test_medianBlur(self):
+        kernel = np.zeros((3, 3))
+        img = np.array([
+            [217, 159, 25, 51, 42],
+            [46, 216, 229, 91, 90],
+            [64, 69, 140, 56, 20],
+            [197, 102, 180, 94, 94]], dtype='uint8')
+        expected = np.array([
+            [216, 159, 91, 51, 51],
+            [69, 140, 91, 56, 51],
+            [69, 140, 102, 94, 90],
+            [102, 140, 102, 94, 94]], dtype='uint8')
+        self.assertTrue(
+            (c1.medianBlur(img, kernel, 'REPLICA') == expected).all())
 
+        img = np.array([
+            [14, 42, 153, 230, 87],
+            [36, 67, 138, 26, 118],
+            [151, 158, 18, 58, 94],
+            [133, 107, 140, 107, 201]], dtype='uint8')
+        expected = np.array([
+            [0, 36, 42, 87, 0],
+            [36, 67, 67, 94, 58],
+            [67, 133, 107, 107, 58],
+            [0, 107, 58, 58, 0]], dtype='uint8')
+        self.assertTrue((c1.medianBlur(img, kernel, 'ZERO') == expected).all())
 
-def test_medianBlur():
-    img = np.full((4, 5), 5, dtype='uint8')
-    kernel = np.zeros((3, 3))
+    def test_quickSelectMedianValue(self):
+        nums = np.random.randint(0, 256, (1000,), dtype='uint8')
+        medianValue = c1.quickSelectMedianValue(nums.copy())
+        nums.sort()
+        self.assertTrue(medianValue == nums[(len(nums)-1)//2])
 
-    assert((medianBlur(img, kernel, 'REPLICA') == img).all())
+    def test_medianBlurQuickSelect(self):
+        img = np.random.randint(0, 256, (512, 512), dtype='uint8')
+        kernel = np.zeros((4, 4), dtype='uint8')
+        filted1 = c1.medianBlur(img, kernel, 'REPLICA')
+        filted2 = c1.medianBlurQuickSelect(img, kernel, 'REPLICA')
 
-    img = np.full((4, 5), 0, dtype='uint8')
-    assert((medianBlur(img, kernel, 'ZERO') == img).all())
+        self.assertTrue((filted1 == filted2).all())
 
+    def test_quickSort(self):
+        nums = np.random.randint(0, 256, (1000,), dtype='uint8')
 
-def test_quickSelectMedianValue():
-    nums = np.random.randint(0, 256, (1000,), dtype='uint8')
-    medianValue = quickSelectMedianValue(nums.copy())
-    nums.sort()
-    assert(medianValue == nums[(len(nums)-1)//2])
+        nums_copy = nums.copy()
+        nums_copy.sort()
 
-
-def test_medianBlurQuickSelect():
-    img = np.random.randint(0, 256, (512, 512), dtype='uint8')
-    kernel = np.zeros((4, 4), dtype='uint8')
-    filted1 = medianBlur(img, kernel, 'REPLICA')
-    filted2 = medianBlurQuickSelect(img, kernel, 'REPLICA')
-
-    assert((filted1 == filted2).all())
-
-
-def test_quickSort():
-    nums = np.random.randint(0, 256, (1000,), dtype='uint8')
-
-    nums_copy = nums.copy()
-    nums_copy.sort()
-
-    quickSort(nums)
-    assert((nums == nums_copy).all())
-
-
-def test():
-    test_replicaPaddingIndex()
-    test_zeroPaddingIndex()
-    test_medianBlur()
-
-    test_quickSelectMedianValue()
-    test_medianBlurQuickSelect()
-
-    test_quickSort()
+        c1.quickSort(nums)
+        self.assertTrue((nums == nums_copy).all())
 
 
 if __name__ == "__main__":
-    # test()
-
-    filepath = sys.argv[1]
-    if not filepath:
-        proj_dir = os.path.dirname(os.path.abspath(__file__))
-        assets_dir = os.path.join(os.path.dirname(proj_dir), 'assets')
-        filepath = os.path.join(assets_dir, 'lenna.jpg')
-
-    img = cv2.imread(filepath, 0)
-    kernel = np.zeros((5, 5))
-
-    print("img: {}, kernel: {}".format(img.shape, kernel.shape))
-
-    cv2.imshow('lenna', img)
-
-    blured = medianBlur(img, kernel, 'REPLICA')
-    cv2.imshow('medianBlur', blured)
-
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    unittest.main()

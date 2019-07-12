@@ -132,8 +132,6 @@ static u8 zeroPaddingIndex(vector<vector<u8>> &img, int row, int col) {
     return inside ? img[row][col] : 0;
 }
 
-// vector<vector<int>>& img, vector<vector<int>> kernel, string padding_way
-
 static void _quickSort(vector<u8> &nums, int l, int r) {
     int i = l, j = r, val = nums[(l + r) / 2];
     while (i <= j) {

@@ -1,4 +1,7 @@
 import numpy as np
+import os
+import sys
+import cv2
 
 
 def medianBlur(img, kernel, padding_way):
@@ -127,3 +130,24 @@ def _quickSort(nums, l, r):
 
 def quickSort(nums):
     _quickSort(nums, 0, len(nums)-1)
+
+
+if __name__ == "__main__":
+    filepath = len(sys.argv) > 1 and sys.argv[1] or None
+    if not filepath:
+        proj_dir = os.path.dirname(os.path.abspath(__file__))
+        assets_dir = os.path.join(os.path.dirname(proj_dir), 'assets')
+        filepath = os.path.join(assets_dir, 'lenna.jpg')
+
+    img = cv2.imread(filepath, 0)
+    kernel = np.zeros((5, 5))
+
+    print("img: {}, kernel: {}".format(img.shape, kernel.shape))
+
+    cv2.imshow('lenna', img)
+
+    blured = medianBlur(img, kernel, 'REPLICA')
+    cv2.imshow('medianBlur', blured)
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
