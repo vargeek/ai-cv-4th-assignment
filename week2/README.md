@@ -1,11 +1,11 @@
 # week2
 ## Reading
 - [ ] Bilateral Filter
-- [ ] Hog
-- [ ] SURF
+- [x] Hog
+- [x] SURF
 - [ ] BRISK
 - [ ] Orb
-- [ ] K-Means
+- [x] K-Means
 
 ## Coding
   - [x] Finish 2D convolution/filtering by your self. ("median blur")
