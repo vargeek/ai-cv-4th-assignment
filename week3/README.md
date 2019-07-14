@@ -5,5 +5,10 @@
 
   ![结果](result/Figure_1.png)
   ___
-- [ ] 2. Logistic regression:
+- [x] 2. Logistic regression:
+  
+  [q2_logistic_regression.py](./q2_logistic_regression.py)  
+
+  ![结果](result/q2_logistic_regression.png)
+  ___
 - [ ] 3. Mathematics:
