@@ -3,8 +3,8 @@
 - [ ] Bilateral Filter
 - [x] Hog
 - [x] SURF
-- [ ] BRISK
-- [ ] Orb
+- [x] BRISK
+- [x] Orb
 - [x] K-Means
 
 ## Coding
@@ -54,6 +54,8 @@
   - [x] RANSAC algorithm
 
     [c2_ransac_matching.py](./c2_ransac_matching.py): `python -m c2_ransac_matching`
+    ![结果](result/result.jpg)
+    demo 中通过 `ORB` 算法检测出两张图片的 `keypoints` 并进行匹配。匹配得到的`points A`, `points B` 作为 `RANSAC` 算法的输入，计算出变换矩阵 `H`。红色边框经过 `H` 变换得到蓝色边框。
 
     参考自opencv: [fundam.cpp](https://github.com/opencv/opencv/blob/4.1.0/modules/calib3d/src/fundam.cpp), [ptsetreg.cpp](https://github.com/opencv/opencv/blob/4.1.0/modules/calib3d/src/ptsetreg.cpp)
     ___
