@@ -125,4 +125,3 @@ ___
   ![stitch2](result/stitch2.jpg)
   ![stitch3](result/stitch3.jpg)
   ![stitch4](result/stitch4.jpg)
-
