@@ -74,10 +74,10 @@ def medianBlurHistogram(img, kernel, padding_way):
     """
     rows, cols, *_ = img.shape  # 图片行数、列数
     krows, kcols, *_ = kernel.shape  # kernel行数、列数
-    pre_rows = krows // 2  # kernel在像素点上面的行数
-    post_rows = (krows - 1) // 2  # kernel在像素点下面的行数
-    pre_cols = kcols // 2  # kernel在像素点左边的列数
-    post_cols = (kcols - 1) // 2  # kernel在像素点右边的列数
+    pre_rows = krows // 2  # kernel在当前点上面的行数
+    post_rows = (krows - 1) // 2  # kernel在当前点下面的行数
+    pre_cols = kcols // 2  # kernel在当前点左边的列数
+    post_cols = (kcols - 1) // 2  # kernel当前点右边的列数
     middle = (krows * kcols + 1) // 2
     index_fn = padding_way.upper() == 'REPLICA' and replicaPaddingIndex or zeroPaddingIndex
 
