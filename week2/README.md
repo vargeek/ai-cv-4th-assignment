@@ -29,7 +29,6 @@
     - 对于两个不相交的直方图，有：$H(A\cup B)=H(A)+H(B)$
     - 列直方图的维护：直方图向下移动一个像素，则最上像素的灰度值次数减一，最下像素的灰度值次数加一。共一次加法、一次减法运算。
     - `kernel`直方图的维护：`kernel`直方图为其所在列的列直方图之和。`kernel`向右移动一个列时，则减去最左列的直方图，并加上最右列直方图。共`256`次减法和`256`次加法。
-    
 
 - 这里分别使用内置排序函数、手动实现的快排、`QuickSelect`算法来实现卷积函数，并在 [main.cpp](./main.cpp) 进行测试。得到如下数据：
 
@@ -92,11 +91,11 @@
 
   比较出乎意料的是系统内置排序比`QuickSelect`还快。
 
-  `kernel`为20时，`medianBlurHistogram` 效率明显高于其他算法。
+  `kernel size`为20时，`medianBlurHistogram` 效率明显高于其他算法。
 
 - 其他参考方案：
   - [Median Filtering in Constant Time](https://files-cdn.cnblogs.com/files/Imageshop/MedianFilterinConstantTime.pdf)
-  - [Computing 2-D Min, Median and Max Filters](http://www.vision.huji.ac.il/papers/median-filter-pami.ps.gz): 
+  - [Computing 2-D Min, Median and Max Filters](http://www.vision.huji.ac.il/papers/median-filter-pami.ps.gz)
   - [Fast Median and Bilateral Filtering](http://www.shellandslate.com/download/fastmedian_5506.pdf)
 
 ___
