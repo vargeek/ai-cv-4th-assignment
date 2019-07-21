@@ -6,7 +6,7 @@ import cv2
 
 def medianBlur(img, kernel, padding_way):
     """
-    img & kernel is List of List  
+    img & kernel is List of List
     padding_way a string
     """
 
@@ -37,8 +37,8 @@ def medianBlur(img, kernel, padding_way):
 
 def medianBlurQuickSelect(img, kernel, padding_way):
     """
-    medianBlur(使用QuickSelect算法查找中位数)  
-    img & kernel is List of List  
+    medianBlur(使用QuickSelect算法查找中位数)
+    img & kernel is List of List
     padding_way a string
     """
 
@@ -64,6 +64,86 @@ def medianBlurQuickSelect(img, kernel, padding_way):
 
             result[row][col] = quickSelectMedianValue(pixels)
     return result
+
+
+def medianBlurHistogram(img, kernel, padding_way):
+    """
+    medianBlur(使用灰度值直方图统计)
+    img & kernel is List of List
+    padding_way a string
+    """
+    rows, cols, *_ = img.shape  # 图片行数、列数
+    krows, kcols, *_ = kernel.shape  # kernel行数、列数
+    pre_rows = krows // 2  # kernel在像素点上面的行数
+    post_rows = (krows - 1) // 2  # kernel在像素点下面的行数
+    pre_cols = kcols // 2  # kernel在像素点左边的列数
+    post_cols = (kcols - 1) // 2  # kernel在像素点右边的列数
+    middle = (krows * kcols + 1) // 2
+    index_fn = padding_way.upper() == 'REPLICA' and replicaPaddingIndex or zeroPaddingIndex
+
+    # 每列的直方图, 256 bin
+    hist_of_cols = np.zeros((cols + 2, 256), dtype=np.int)
+    # 当前kernel直方图, 256 bin
+    hist_of_kernel = np.zeros((256,), dtype=np.int)
+
+    # 初始化每列直方图
+    for col in range(-1, cols + 1):
+        pixel = index_fn(img, -1, col)
+        # 多加一是因为更新`hist_of_kernel`会再减一次
+        hist_of_col = hist_of_cols[1+col]
+        hist_of_col[pixel] = hist_of_col[pixel] + pre_rows + 1
+        for row in range(0, post_rows):
+            pixel = index_fn(img, row, col)
+            hist_of_col[pixel] = hist_of_col[pixel] + 1
+
+    # 过滤后的图像
+    result = np.zeros((rows, cols), dtype=img.dtype)
+    for row in range(0, rows):
+        # 初始化当前kernel直方图
+        hist_of_kernel[:] = 0
+        # 更新前 `post_cols+1` 列直方图
+        for col in range(-1, post_cols):
+            hist_of_col = hist_of_cols[col+1]
+            top_pixel = index_fn(img, row-pre_rows-1, col)
+            bottom_pixel = index_fn(img, row+post_rows, col)
+            hist_of_col[top_pixel] = hist_of_col[top_pixel] - 1
+            hist_of_col[bottom_pixel] = hist_of_col[bottom_pixel] + 1
+
+            hist_of_kernel = hist_of_kernel + hist_of_col
+
+        # 多加一列因为后面会再减一次
+        hist_of_kernel = hist_of_kernel + hist_of_cols[0] * pre_cols
+
+        # 更新kernel最右列直方图: `hist_of_right_col`
+        # kernel直方图: `hist_of_kernel`
+        for col in range(0, cols):
+            right_col = col + post_cols
+            left_col = col - pre_cols - 1
+            top_pixel = index_fn(img, row-pre_rows-1, right_col)
+            bottom_pixel = index_fn(img, row+post_rows, right_col)
+
+            hist_of_left_col = hist_of_cols[max(0, left_col + 1)]
+            hist_of_right_col = hist_of_cols[min(cols + 1, right_col + 1)]
+            hist_of_right_col[top_pixel] = hist_of_right_col[top_pixel] - 1
+            hist_of_right_col[bottom_pixel] = hist_of_right_col[bottom_pixel] + 1
+
+            hist_of_kernel = hist_of_kernel + \
+                hist_of_right_col - hist_of_left_col
+            # 更新`(row, col)`像素
+            result[row][col] = getMedianValueFromHistogram(
+                hist_of_kernel, middle)
+
+    return result
+
+
+def getMedianValueFromHistogram(hist, middle):
+    pixel = 0
+    sum = hist[pixel]
+    while pixel < 255 and sum < middle:
+        pixel = pixel + 1
+        sum = sum + hist[pixel]
+
+    return pixel
 
 
 def replicaPaddingIndex(img, row, col):
