@@ -1,13 +1,16 @@
+# %%
 import random
 import matplotlib.pyplot as plt
 import numpy as np
 
+# %%
+
 
 def inference(Theta, X):
     """
-    Theta: (n+1, 1), `n` 为 `variable` 个数  
-    X: shape: (nb_samples, n+1)  
-    retval: (nb_samples, 1)
+    Theta: (n+1,), `n`: 特征数
+    X: shape: (nb_samples, n+1), `nb_samples`: 样本数
+    retval: (nb_samples,)
     """
     z = X @ Theta
     return 1 / (1 + np.exp(-z))
@@ -15,10 +18,10 @@ def inference(Theta, X):
 
 def gradient(Ypred, Ygt, X):
     """
-    Ypred: (nb_samples, 1) 
-    Ygt: (nb_samples, 1)
+    Ypred: (nb_samples,), `nb_samples`: 样本数
+    Ygt: (nb_samples,)
     X: (nb_samples, n+1)
-    retval: (n+1, 1)
+    retval: (n+1,)
     """
     nb_samples = len(X)
     d = X.transpose() @ (Ypred - Ygt) / nb_samples
@@ -27,11 +30,11 @@ def gradient(Ypred, Ygt, X):
 
 def cal_step_gradient(X, Ygt, Theta, lr):
     """
-    X: (nb_samples, n+1)  
-    Ygt: (nb_samples, 1)  
-    Theta: (n+1, 1)  
+    X: (nb_samples, n+1): `nb_samples`: 样本数, `n`: 特征数
+    Ygt: (nb_samples,)
+    Theta: (n+1,)
     lr: learn rate
-    retval: (n+1, 1)
+    retval: (n+1,)
     """
     Ypred = inference(Theta, X)
     d = gradient(Ypred, Ygt, X)
@@ -41,30 +44,29 @@ def cal_step_gradient(X, Ygt, Theta, lr):
 
 def eval_loss(Theta, X, Ygt):
     """
-    Theta: (n+1, 1)
-    X: (nb_samples, n+1)
-    Ygt: (nb_samples, 1)
+    Theta: (n+1,), `n`: 特征数
+    X: (nb_samples, n+1), `nb_samples`: 样本数
+    Ygt: (nb_samples,)
     """
-    Ypred = inference(Theta, X)  # (m, 1)
-    Ygt_T = Ygt.transpose()  # (1,m)
-    loss = -Ygt_T @ np.log(Ypred) - (1 - Ygt_T) @ np.log(1 - Ypred)
-    avg_loss = loss[0][0] / len(X)
 
+    Ypred = inference(Theta, X)  # (m, 1)
+    loss = -sum(Ygt * np.log(Ypred)) - sum((1 - Ygt) * np.log(1 - Ypred))
+    avg_loss = loss / len(X)
     return avg_loss
 
 
 def train(X, Ygt, batch_size, lr, max_iter):
     """
-    X: (nb_samples, n+1)  
-    Ygt: (nb_samples, 1)  
+    X: (nb_samples, n+1), `nb_samples`: 样本数, `n`: 特征数
+    Ygt: (nb_samples,)
     """
-    Theta = np.array([[0, 0, 0]], dtype=X.dtype).transpose()
+    Theta = np.zeros((3,), dtype=X.dtype)
     nb_samples = len(X)
     losss = []
     for _ in range(max_iter):
         batch_indices = np.random.choice(nb_samples, batch_size)
         X_batch = X[batch_indices, :]
-        Y_batch = Ygt[batch_indices, :]
+        Y_batch = Ygt[batch_indices]
         Theta = cal_step_gradient(X_batch, Y_batch, Theta, lr)
         loss = eval_loss(Theta, X, Ygt)
         losss.append(loss)
@@ -89,25 +91,31 @@ def gen_sample_data(nb_samples=100):
 
 
 def gen_sample_matrix(nb_samples=100):
-    xs1, xs2, ys, k, b = gen_sample_data()
+    xs1, xs2, ys, k, b = gen_sample_data(nb_samples)
 
     dtype = np.float
     X = np.array([xs1, xs2], dtype=dtype).transpose()
     One = np.ones((nb_samples, 1))
     X = np.hstack((One, X))
 
-    Y = np.array([ys], dtype=dtype).transpose()
+    Y = np.array(ys, dtype=dtype)
 
     return X, Y, k, b
 
 
 def draw(X, Y, model, loss):
+    """
+    X: (nb_samples, n+1): `nb_samples`: 样本数, `n`: 特征数
+    Y: (nb_samples,)
+    model: (n+1,)
+    loss: (iter,), `iter`: 迭代次数
+    """
     fig, [plt1, plt2] = plt.subplots(1, 2)
     fig.suptitle("q2_logistic_regression")
 
     plt1.set_xlabel("x1")
     plt1.set_ylabel("x2")
-    pos_samples = (Y == 1).transpose()[0]
+    pos_samples = (Y == 1)
     neg_samples = pos_samples == False
     pos = X[pos_samples, :]
     neg = X[neg_samples, :]
@@ -115,9 +123,9 @@ def draw(X, Y, model, loss):
     plt1.scatter(pos[:, 1], pos[:, 2], label="positive", color="red")
     plt1.scatter(neg[:, 1], neg[:, 2], label="negative", color="yellow")
 
-    theta0 = model[0][0]
-    theta1 = model[1][0]
-    theta2 = model[2][0]
+    theta0 = model[0]
+    theta1 = model[1]
+    theta2 = model[2]
     xs1 = np.linspace(0, 10, 100)
     xs2 = []
 
@@ -144,5 +152,6 @@ def run():
     draw(X, Y, model, loss)
 
 
+# %%
 if __name__ == "__main__":
     run()

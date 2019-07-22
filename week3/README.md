@@ -1,4 +1,5 @@
 # week3
+
 - [x] 1. Reorganize Linear Regression in Python mode.
 
   [q1_linear_regression.py](./q1_linear_regression.py)  
