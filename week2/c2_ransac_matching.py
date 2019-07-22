@@ -73,7 +73,7 @@ def findInliersCount(A, B, H, threshold=3):
 
 def findInliers(A, B, H, threshold=3):
     """
-    寻找内点个数
+    寻找内点
     """
     err = computeReprojError(A, B, H)
     mask = err < threshold
@@ -83,6 +83,9 @@ def findInliers(A, B, H, threshold=3):
 
 
 def computeH(M, m):
+    """
+    计算H变换矩阵
+    """
     count = len(M)
     dtype = M.dtype
     cM = np.sum(M, 0) / count
@@ -219,65 +222,47 @@ def updateIterNb(p_inlier, confidence=0.95, count=4):
 
 
 if __name__ == "__main__":
-    A = np.array([
-        [285, 281],
-        [139, 51],
-        [320, 281],
-        [263, 362],
-        [323, 359],
-        [390, 511],
-        [380, 479],
-        [352, 139],
-        [376, 211],
-        [258, 242],
-        [339, 200],
-        [106, 212],
-        [371, 192],
-        [78, 272],
-        [30, 511],
-    ], dtype=np.float32)
-    B = np.array([
-        [284, 259],
-        [103, 180],
-        [304, 245],
-        [303, 317],
-        [339, 289],
-        [439, 353],
-        [419, 337],
-        [266, 146],
-        [310, 181],
-        [252, 247],
-        [283, 189],
-        [148, 290],
-        [299, 170],
-        [157, 337],
-        [223, 498],
-    ], dtype=np.float32)
+    # 读取原始图片和旋转后的图片
+    img1 = cv2.imread(util.getLennaFilepath())
+    img2 = cv2.imread(util.getLenna2Filepath())
 
-    canvas = np.full((512, 1024, 3), 255, dtype=np.uint8)
-    img = cv2.imread(util.getLennaFilepath())
-    canvas[:, :512, :] = img
+    # 使用ORB算法检测 `keypoints`
+    orb = cv2.ORB_create()
+    kp1, des1 = orb.detectAndCompute(img1, None)
+    kp2, des2 = orb.detectAndCompute(img2, None)
 
-    img = cv2.imread(util.getLenna2Filepath())
-    canvas[:, 512:, :] = img
+    # # 显示 `keypoints`
+    # kp1img = cv2.drawKeypoints(img1, kp1, None, color=(
+    #     0, 255, 0), flags=0)
+    # kp2img = cv2.drawKeypoints(img2, kp2, None, color=(
+    #     0, 255, 0), flags=0)
+    # cv2.imshow('img1kp', kp1img)
+    # cv2.imshow('img2kp', kp2img)
 
-    red = (0, 0, 255)
-    green = (0, 255, 0)
-    blue = (255, 0, 0)
+    # match 两张图片的 `keypoints`
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    matches = bf.match(des1, des2)
+    matches = sorted(matches, key=lambda x: x.distance)
 
-    for pt in A:
-        cv2.circle(canvas, (pt[0], pt[1]), 3, red, -1)
+    # 画出20对匹配的 `keypoints`
+    matches_img = cv2.drawMatches(
+        img1, kp1, img2, kp2, matches[:20], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
 
-    for pt in B:
-        cv2.circle(canvas, (int(512+pt[0]), pt[1]), 3, green, -1)
-
+    # 执行 `RANSAC` 算法，计算出变换矩阵 `H`
+    A = np.array([kp1[m.queryIdx].pt for m in matches])
+    B = np.array([kp2[m.trainIdx].pt for m in matches])
     H = ransacMatching(A, B)
     # H = ransacMatching2(A, B)
-    for a in A:
-        b = H.dot(np.float32([*a, 1]))
-        x, y = int(512+b[0]), int(b[1])
-        cv2.circle(canvas, (x, y), 3, blue, -1)
 
-    cv2.imshow('canvas', canvas)
+    # 画出原始图片的边框(红色)，以及该边框经过 `H` 变换得到的边框(蓝色)
+    rows,cols,_ = img1.shape
+    pts = np.array([[0,0],[0,rows-1],[cols-1,rows-1],[cols-1,0] ], dtype=np.float32).reshape(-1,1,2)
+    dst = cv2.perspectiveTransform(pts,H)
+    dst[:,:,0] += cols
+
+    result_img = cv2.polylines(matches_img,[np.int32(pts)],True,(0,0,255),3, cv2.LINE_AA)
+    result_img = cv2.polylines(result_img,[np.int32(dst)],True,255,3, cv2.LINE_AA)
+
+    cv2.imshow('result_img', result_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

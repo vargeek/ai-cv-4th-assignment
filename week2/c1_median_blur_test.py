@@ -78,6 +78,14 @@ class Test(unittest.TestCase):
         c1.quickSort(nums)
         self.assertTrue((nums == nums_copy).all())
 
+    def test_medianBlurHistogram(self):
+        img = np.random.randint(0, 256, (512, 512), dtype='uint8')
+        kernel = np.zeros((4, 4), dtype='uint8')
+        filted1 = c1.medianBlurQuickSelect(img, kernel, 'REPLICA')
+        filted2 = c1.medianBlurHistogram(img, kernel, 'REPLICA')
+
+        self.assertTrue((filted1 == filted2).all())
+
 
 if __name__ == "__main__":
     unittest.main()

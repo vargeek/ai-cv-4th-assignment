@@ -48,11 +48,23 @@ bool check_img(const vector<vector<u8>> &img1, const vector<vector<u8>> &img2) {
     for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
             if (img1[row][col] != img2[row][col]) {
+                printf("row: %d, col: %d, %d, %d\n", row, col, img1[row][col], img2[row][col]);
                 return false;
             }
         }
     }
     return true;
+}
+
+void print_img(const vector<vector<u8>> &img1) {
+    int rows = img1.size();
+    int cols = rows > 0 ? img1[0].size() : 0;
+    for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+            printf("\t%d", img1[row][col]);
+        }
+        printf("\n");
+    }
 }
 
 TEST_CASE("test the quickSort function", "[quickSort]") {
@@ -118,7 +130,20 @@ TEST_CASE("test the medianBlur function", "[medianBlur]") {
     CHECK(check_img(result1, result2));
 }
 
-TEST_CASE("medianBlur benchmark", "[benchmark]") {
+TEST_CASE("test the medianBlurHistogram function", "[medianBlurHistogram]") {
+    // srand(0);
+    srand((unsigned)time(NULL));
+
+    vector<vector<u8>> img = random_img(256, 256);
+    vector<vector<u8>> kernel = random_img(4, 4);
+
+    vector<vector<u8>> result1 = medianBlurQuickSelect(img, kernel, "REPLICA");
+    vector<vector<u8>> result2 = medianBlurHistogram(img, kernel, "REPLICA");
+
+    CHECK(check_img(result1, result2));
+}
+
+TEST_CASE("medianBlur 256x256x4x4benchmark", "[benchmark]") {
     srand((unsigned)time(NULL));
 
     vector<vector<u8>> img = random_img(256, 256);
@@ -142,6 +167,48 @@ TEST_CASE("medianBlur benchmark", "[benchmark]") {
     (Catch::Benchmark::Chronometer meter) {
         meter.measure([&img, &kernel] {
             medianBlurQuickSelect(img, kernel, "REPLICA");
+        });
+    };
+
+    BENCHMARK_ADVANCED("medianBlurHistogram")
+    (Catch::Benchmark::Chronometer meter) {
+        meter.measure([&img, &kernel] {
+            medianBlurHistogram(img, kernel, "REPLICA");
+        });
+    };
+}
+
+TEST_CASE("medianBlur 100x100x20x20 benchmark", "[benchmark]") {
+    srand((unsigned)time(NULL));
+
+    vector<vector<u8>> img = random_img(100, 100);
+    vector<vector<u8>> kernel = random_img(20, 20);
+
+    BENCHMARK_ADVANCED("medianBlur")
+    (Catch::Benchmark::Chronometer meter) {
+        meter.measure([&img, &kernel] {
+            medianBlur(img, kernel, "REPLICA");
+        });
+    };
+
+    BENCHMARK_ADVANCED("medianBlurQuickSort")
+    (Catch::Benchmark::Chronometer meter) {
+        meter.measure([&img, &kernel] {
+            medianBlurQuickSort(img, kernel, "REPLICA");
+        });
+    };
+
+    BENCHMARK_ADVANCED("medianBlurQuickSelect")
+    (Catch::Benchmark::Chronometer meter) {
+        meter.measure([&img, &kernel] {
+            medianBlurQuickSelect(img, kernel, "REPLICA");
+        });
+    };
+
+    BENCHMARK_ADVANCED("medianBlurHistogram")
+    (Catch::Benchmark::Chronometer meter) {
+        meter.measure([&img, &kernel] {
+            medianBlurHistogram(img, kernel, "REPLICA");
         });
     };
 }

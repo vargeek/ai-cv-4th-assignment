@@ -8,6 +8,10 @@ def getAssetDir():
     return assets_dir
 
 
+def findFile(filename):
+    return os.path.join(getAssetDir(), filename)
+
+
 def getLennaFilepath():
     return os.path.join(getAssetDir(), 'lenna.jpg')
 
@@ -16,7 +20,7 @@ def getLenna2Filepath():
     return os.path.join(getAssetDir(), 'lenna2.jpg')
 
 
-def getImagePath():
+def getImagePathsFromArgv():
     filepath = len(sys.argv) > 1 and sys.argv[1] or None
     if not filepath:
         filepath = os.path.join(getAssetDir(), 'lenna.jpg')
