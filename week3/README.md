@@ -29,4 +29,6 @@
 
   $\therefore 垂直方向总距离\; d= \sum\limits_{i=1}^n{s_i \cdot tan \alpha _i}$
 
-  $要在满足(1)式的条件下求d的极值，\\则极值点必在下式的极值点中: \\ \mathcal {L} \left(\alpha_1,\alpha_2,\ldots,\alpha_n,\lambda\right) = \sum\limits_{i=1}^n{s_i \cdot tan \alpha _i} + \lambda \left( \sum \limits_{i=1}^n{\frac{s_i}{v \cdot cos\alpha _i}} - T \right)$ -->
+  $要在满足(1)式的条件下求d的极值，\\则极值点必在式(2)的极值点中: \\ \mathcal {L} \left(\alpha_1,\alpha_2,\ldots,\alpha_n,\lambda\right) = \sum\limits_{i=1}^n{s_i \cdot tan \alpha _i} + \lambda \left( \sum \limits_{i=1}^n{\frac{s_i}{v \cdot cos\alpha _i}} - T \right)\;(2)$
+
+  $\therefore 可以将式(2)作为\;cost\:function$ -->
