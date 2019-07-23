@@ -74,11 +74,16 @@ def train(X, Ygt, batch_size, lr, max_iter):
 
 
 def gen_sample_data(nb_samples=100):
-    b = 5 + random.random() * 2 - 1  # [-4,6)
+    b = 5 + random.random() * 2 - 1  # [4,6)
     k = -1 + random.random() * 1 - 0.5  # [-1.5,1.5)
 
-    xs1 = [random.random() * 10 for _ in range(nb_samples)]
-    xs2 = [random.random() * 10 - 5 for _ in range(nb_samples)]
+    xrange = 10
+    bottom = b
+    top = k * xrange + b
+
+    xs1 = [random.random() * xrange for _ in range(nb_samples)]
+    xs2 = [(top - bottom) * random.random() +
+           bottom for _ in range(nb_samples)]
 
     def random_y(x1, x2):
         delta = 0.5
@@ -140,9 +145,9 @@ def draw(X, Y, model, loss):
 
 
 def run():
-    nb_samples = 100
+    nb_samples = 500
     learn_rate = 0.03
-    max_iter = 1000
+    max_iter = 3000
 
     X, Y, k, b = gen_sample_matrix(nb_samples)
     print("X: {}, Y: {}, k: {}, b: {}".format(X.shape, Y.shape, k, b))

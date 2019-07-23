@@ -23,7 +23,7 @@ def eval_loss(Theta, X, Ygt):
     """
     nb_samples = len(X)
     diff = (X @ Theta) - Ygt
-    avg_loss = sum(diff * diff) / nb_samples
+    avg_loss = 0.5 * sum(diff * diff) / nb_samples
     return avg_loss
 
 

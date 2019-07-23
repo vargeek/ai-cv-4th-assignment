@@ -4,7 +4,7 @@
 
   [q1_linear_regression.py](./q1_linear_regression.py)  
 
-  ![结果](result/Figure_1.png)
+  ![结果](result/q1_linear_regression.png)
   ___
 - [x] 2. Logistic regression:
   
