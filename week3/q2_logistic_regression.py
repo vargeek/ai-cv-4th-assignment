@@ -50,7 +50,7 @@ def eval_loss(Theta, X, Ygt):
     """
 
     Ypred = inference(Theta, X)  # (m, 1)
-    loss = -sum(Ygt * np.log(Ypred)) - sum((1 - Ygt) * np.log(1 - Ypred))
+    loss = -sum(Ygt * np.log(Ypred) + (1 - Ygt) * np.log(1 - Ypred))
     avg_loss = loss / len(X)
     return avg_loss
 
