@@ -2,7 +2,7 @@
 
 ## Coding
 
-- [ ] K-Means++
+- [x] K-Means++
   - [c1_kmeanspp.py](c1_kmeanspp.py)/`initial_centroids_kmeanspp(df, k)`
   - 效果见此 [链接](./KMeansResult.md)
 
