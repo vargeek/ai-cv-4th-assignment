@@ -34,4 +34,5 @@
   - [ ] g. What is a Haar feature?
   - [ ] h. Can you find out any upgrade Haar features besides the original one?
   - [ ] i. Can you implement a Haar feature in Python or C++?
-  - [ ] j. Can you implement the algorithm in a accelerated way? Like integral image? k. How to combine Haar feature with AdaBoost?
+  - [ ] j. Can you implement the algorithm in a accelerated way? Like integral image?
+  - [ ] k. How to combine Haar feature with AdaBoost?
