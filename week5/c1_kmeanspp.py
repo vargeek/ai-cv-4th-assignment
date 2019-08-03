@@ -7,6 +7,10 @@ import matplotlib._color_data as mcd
 
 
 # %%
+def square_of_distance(pt1, pt2):
+    return (pt1.x - pt2.x)**2 + (pt1.y - pt2.y)**2
+
+
 def assignment(df, centroids):
     """
     计算每个样本所属质心，存储到 `closest` 列
@@ -15,7 +19,7 @@ def assignment(df, centroids):
     distance = pd.DataFrame({
         # sqrt((x1 - x2)^2 - (y1 - y2)^2)
         i:
-        np.sqrt((df.x - centroids.loc[i, 'x'])**2 + (df.y-centroids.loc[i, 'y'])**2) for i in range(k)
+        np.sqrt(square_of_distance(df, centroids.loc[i])) for i in range(k)
     })
     df['closest'] = distance.idxmin(axis=1)
     return df
@@ -40,8 +44,8 @@ def eval_loss(df, centroids):
     loss = 0
     for i in range(k):
         samples = df[df.closest == i]
-        loss = loss + np.sum((samples.x - centroids.loc[i].x) **
-                             2 + (samples.y - centroids.loc[i].y)**2)
+        loss = loss + np.sum(square_of_distance(samples, centroids.loc[i]))
+
     return loss / len(df)
 
 
@@ -95,10 +99,6 @@ def get_color_map(k):
         for _ in range(k - len(colors)):
             colors.append(np.random.rand(3) * (high - low) + low)
     return colors
-
-
-def square_of_distance(pt1, pt2):
-    return (pt1.x - pt2.x)**2 + (pt1.y - pt2.y)**2
 
 
 def binary_search(nums, val):
