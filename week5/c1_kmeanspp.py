@@ -7,19 +7,29 @@ import matplotlib._color_data as mcd
 
 
 # %%
-def square_of_distance(pt1, pt2):
-    return (pt1.x - pt2.x)**2 + (pt1.y - pt2.y)**2
+def square_of_distance(pts1, pts2):
+    """
+    点距离的平方
+    """
+    # (x1 - x2)^2 - (y1 - y2)^2
+    return (pts1.x - pts2.x)**2 + (pts1.y - pts2.y)**2
+
+
+def cal_distance(pts1, pts2):
+    """
+    计算点距离
+    """
+    return np.sqrt(square_of_distance(pts1, pts2))
 
 
 def assignment(df, centroids):
     """
-    计算每个样本所属质心，存储到 `closest` 列
+    计算每个样本所属质心，存储到 `df.closest` 列
     """
     k = len(centroids)
     distance = pd.DataFrame({
-        # sqrt((x1 - x2)^2 - (y1 - y2)^2)
         i:
-        np.sqrt(square_of_distance(df, centroids.loc[i])) for i in range(k)
+        cal_distance(df, centroids.loc[i]) for i in range(k)
     })
     df['closest'] = distance.idxmin(axis=1)
     return df
