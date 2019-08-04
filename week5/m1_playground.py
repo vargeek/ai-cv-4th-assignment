@@ -61,6 +61,7 @@ def cal_G(df):
     print('------------------------\n')
 
 
+# %%
 if __name__ == "__main__":
     print('🔶🔶🔶🔶🔶🔶🔶🔶')
     cal_G(df)
@@ -71,40 +72,43 @@ if __name__ == "__main__":
     df_Ah = df.loc[[4, 5, 6, 10, 14]]
     df_Good = df.loc[[1, 2, 8, 9, 11]]
     df_Great = df.loc[[3, 7, 12, 13]]
-    print(df_Ah, '\n', df_Good, '\n', df_Great)
+# %%
+    pd.concat([df_Ah, df_Good, df_Great])
 
 
 # %%
     # branch Ah -> Profession
+    df_Ah
+# %%
     print('🔶🔶🔶🔶🔶🔶🔶🔶')
     cal_G(df_Ah)
     # Steady: [4,5,10] -> Y
     # Unstable: [6,14] -> N
     df_Ah_Steady = df.loc[[4, 5, 10]]
     df_Ah_Unstable = df.loc[[6, 14]]
-    print(df_Ah_Steady, '\n', df_Ah_Unstable)
-    assert(cal_entropy_D(df_Ah_Steady) == 0)
-    assert(cal_entropy_D(df_Ah_Unstable) == 0)
-
+# %%
+    pd.concat([df_Ah_Steady, df_Ah_Unstable])
 
 # %%
     # branch Good -> Age
+    df_Good
+
+# %%
     print('🔶🔶🔶🔶🔶🔶🔶🔶')
     cal_G(df_Good)
     # Older: [1,2,8] -> N
     # Younger: [9,11] -> Y
     df_Good_Older = df.loc[[1, 2, 8]]
     df_Good_Younger = df.loc[[9, 11]]
-    print(df_Good_Older, '\n', df_Good_Younger)
-    assert(cal_entropy_D(df_Good_Older) == 0)
-    assert(cal_entropy_D(df_Good_Younger) == 0)
-
+# %%
+    pd.concat([df_Good_Older, df_Good_Younger])
 
 # %%
     # branch Great -> Y
+    df_Great
+# %%
     print('🔶🔶🔶🔶🔶🔶🔶🔶')
-    H_D_Great = cal_entropy_D(df_Great)
-    assert(H_D_Great == 0)
+    cal_entropy_D(df_Great)
 
 # %%
     xs = np.linspace(0.001, 1, 1000)
