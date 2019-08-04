@@ -1,0 +1,15 @@
+ID,Appearance,Income,Age,Profession,是否受欢迎
+1,Good,Low,Older,Steady,N
+2,Good,Low,Older,Unstable,N
+3,Great,Low,Older,Steady,Y
+4,Ah,Good,Older,Steady,Y
+5,Ah,Great,Younger,Steady,Y
+6,Ah,Great,Younger,Unstable,N
+7,Great,Great,Younger,Unstable,Y
+8,Good,Good,Older,Steady,N
+9,Good,Great,Younger,Steady,Y
+10,Ah,Good,Younger,Steady,Y
+11,Good,Good,Younger,Unstable,Y
+12,Great,Good,Older,Unstable,Y
+13,Great,Low,Younger,Steady,Y
+14,Ah,Good,Older,Unstable,N

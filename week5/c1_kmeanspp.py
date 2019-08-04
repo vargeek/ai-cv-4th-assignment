@@ -26,10 +26,9 @@ def assignment(df, centroids):
     """
     计算每个样本所属质心，存储到 `df.closest` 列
     """
-    k = len(centroids)
     distance = pd.DataFrame({
         i:
-        cal_distance(df, centroids.loc[i]) for i in range(k)
+        cal_distance(df, centroids.loc[i]) for i in centroids.index
     })
     df['closest'] = distance.idxmin(axis=1)
     return df
@@ -39,8 +38,7 @@ def update(df, centroids):
     """
     更新 `k` 个质心的坐标
     """
-    k = len(centroids)
-    for i in range(k):
+    for i in centroids.index:
         centroids.loc[i] = np.mean(df[df.closest == i])
 
     return centroids
@@ -50,9 +48,8 @@ def eval_loss(df, centroids):
     """
     计算损失
     """
-    k = len(centroids)
     loss = 0
-    for i in range(k):
+    for i in centroids.index:
         samples = df[df.closest == i]
         loss = loss + np.sum(square_of_distance(samples, centroids.loc[i]))
 
