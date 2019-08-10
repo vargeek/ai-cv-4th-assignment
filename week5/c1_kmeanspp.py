@@ -7,6 +7,58 @@ import matplotlib._color_data as mcd
 
 
 # %%
+
+def initial_centroids_kmeanspp(df, k):
+    """
+    K-Means++获取初始中心
+    df: [nb_samples,['x,'y']]
+    """
+    nb_samples = len(df)
+
+    # 随机选择一个中心
+    idx = np.random.randint(0, nb_samples)
+    # 被选为中心的样本索引值
+    indices = [idx]
+
+    # > D(x): the shortest distance from a data point to the closest center we have already chosen.
+    D = None
+
+    for _ in range(k - 1):
+        # 使用上轮选中的中心更新每个样本到已选中心的最短距离
+        c = df.loc[idx]
+        newD = square_of_distance(df, c)
+        if D is None:
+            D = newD
+        else:
+            # 更新最短距离
+            D[newD < D] = newD[newD < D]
+
+        # 按概率随机选中一个样本
+        p_acc = (D / np.sum(D)).cumsum()
+
+        p = np.random.rand()
+        # 选择`>=p`的最左边的值，可自动排除已选样本
+        idx = min(binary_search(p_acc, p), nb_samples - 1)
+        indices.append(idx)
+
+    return df.loc[indices, ['x', 'y']].reset_index()
+
+
+def binary_search(nums, val):
+    """
+    二分查找(`>=val`的最左边的值)
+    """
+    l = 0
+    r = len(nums) - 1
+    while l <= r:
+        m = (l + r) // 2
+        if nums[m] < val:
+            l = m + 1
+        else:
+            r = m - 1
+    return l
+
+
 def square_of_distance(pts1, pts2):
     """
     点距离的平方
@@ -24,7 +76,7 @@ def cal_distance(pts1, pts2):
 
 def assignment(df, centroids):
     """
-    计算每个样本所属质心，存储到 `df.closest` 列
+    计算每个样本所属中心，存储到 `df.closest` 列
     """
     distance = pd.DataFrame({
         i:
@@ -36,7 +88,7 @@ def assignment(df, centroids):
 
 def update(df, centroids):
     """
-    更新 `k` 个质心的坐标
+    更新 `k` 个中心的坐标
     """
     for i in centroids.index:
         centroids.loc[i] = np.mean(df[df.closest == i])
@@ -58,7 +110,7 @@ def eval_loss(df, centroids):
 
 def draw(df, centroids, color_map, title):
     """
-    绘制样本以及质心
+    绘制样本以及中心
     """
     fig = plt.figure(title)
     plot = fig.subplots()
@@ -108,49 +160,6 @@ def get_color_map(k):
     return colors
 
 
-def binary_search(nums, val):
-    l = 0
-    r = len(nums) - 1
-    while l <= r:
-        m = (l + r) // 2
-        if nums[m] < val:
-            l = m + 1
-        else:
-            r = m - 1
-    return l
-
-
-def initial_centroids_kmeanspp(df, k):
-    """
-    K-Means++获取初始质心
-    """
-    nb_samples = len(df)
-
-    # 随机选择一个中心
-    idx = np.random.randint(0, nb_samples)
-    indices = [idx]
-
-    # > D(x): the shortest `square_of_distance` from a data point to the closest center we have already chosen.
-    D = None
-
-    for _ in range(k - 1):
-        c = df.loc[idx, :]
-        newD = square_of_distance(df, c)
-        if D is None:
-            D = newD
-        else:
-            # shortest `square_of_distance`
-            D[newD < D] = newD[newD < D]
-
-        prob = (D / np.sum(D)).cumsum()
-
-        p = np.random.rand()
-        idx = min(binary_search(prob, p), nb_samples - 1)
-        indices.append(idx)
-
-    return df.loc[indices, ['x', 'y']].reset_index()
-
-
 def run_kmeans(df, k, use_kmeanspp=False, should_draw=True, max_step=10):
     """
     执行`k-means`算法  
@@ -172,6 +181,7 @@ def run_kmeans(df, k, use_kmeanspp=False, should_draw=True, max_step=10):
             'y': np.random.randint(0, 80, k),
         })
 
+    # 每个样本分配中心
     df = assignment(df, centroids)
     title = "k{}_{}".format(use_kmeanspp and 'pp' or '', k)
     if should_draw:
@@ -182,7 +192,9 @@ def run_kmeans(df, k, use_kmeanspp=False, should_draw=True, max_step=10):
     for step in range(max_step):
         closest_centroids = df['closest'].copy(deep=True)
 
+        # 更新中心坐标
         centroids = update(df, centroids)
+        # 重新分配中心
         df = assignment(df, centroids)
         if should_draw:
             draw(df, centroids, color_map, "{}_{}".format(title, step+1))
@@ -205,9 +217,12 @@ if __name__ == "__main__":
         'y': [39, 36, 30, 52, 54, 20, 46, 55, 59, 63, 70, 66, 63, 58, 23, 14, 8, 19, 7, 24, 77]
     })
 
+    # 运行kmeans
     run_kmeans(df, 3)
+    # 运行kmeans++
     run_kmeans(df, 3, True)
 
+    # 选择不同k值
     loss_of_k = []
     for k in range(10):
         loss = run_kmeans(df, k+1, True, False)
