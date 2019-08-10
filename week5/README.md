@@ -76,7 +76,7 @@
 - [x] C4.5, CART
   - [x] What is Gain Ratio?
 
-    特征A对训练集D的信息增益与训练集D关于特征A的值的熵之比。
+    特征F对训练集D的信息增益与训练集D关于特征F的值的熵之比。
 
     <!-- $SplitInformation(D \vert F) = -\sum\limits_{i=1}^{n}{\frac{\vert D_i\vert}{\vert D \vert} log \frac{\vert D_i \vert}{\vert D \vert} }\\\:\:其中 D_i 为 样本集D中F属性取值为a_i的子集$
     $GainRatio(D\vert F) = \frac{G(D\vert F)}{SplitInformation(D \vert F)}$ -->
@@ -90,7 +90,7 @@
 
   - [x] How to split a node by using Gain Ratio?
 
-    信息增益比一般对取值数目较多的属性有所偏好。所以一般先从候选属性中选出信息增益高于平均水平的属性，然后再选出增益率最高的属性。最后根据该属性的取值，将样本集分裂成若干子集。
+    信息增益比一般对取值数目较多的属性有所偏好。所以一般先从候选属性中选出信息增益高于平均水平的属性，然后再选出信息增益比最高的属性。最后根据该属性的取值，将样本集分裂成若干子集。
 
   - [x] What Gini Index?
 
