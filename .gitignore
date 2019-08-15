@@ -118,3 +118,6 @@ CTestTestfile.cmake
 
 /build/
 .vscode
+
+/proj1/Dataset
+/proj2/data
