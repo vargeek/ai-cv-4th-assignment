@@ -14,7 +14,8 @@ Outline
 ### 1. 生成 train/test.txt
 
 ```bash
-python -m generate_train_test_list /path/to/data_dir/
+python -m generate_train_test_list -h
+python -m generate_train_test_list
 ```
 
 ### 2. 网络搭建
