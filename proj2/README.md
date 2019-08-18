@@ -2,7 +2,20 @@
 
 ## stage 1
 
+Outline
+
+- 原始数据
+- 网络
+- 训练框架的搭建
+- 如何读取数据
+- Train部分
+- Test、Predict 与 Finetune 部分
+
 ### 1. 生成 train/test.txt
+
+```bash
+python -m generate_train_test_list /path/to/data_dir/
+```
 
 ### 2. 网络搭建
 

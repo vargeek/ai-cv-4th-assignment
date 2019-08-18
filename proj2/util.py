@@ -14,9 +14,9 @@ def get_proj_dir():
     获取项目路径
     """
     if '__file__' in locals().keys():
-        return os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        return os.path.dirname(os.path.realpath(__file__))
     else:
-        return os.path.dirname(os.path.realpath(os.curdir))
+        return os.path.realpath(os.curdir)
 
 
 def get_data_dir():
