@@ -65,12 +65,9 @@ class Loader():
     def __init__(self, args):
         self.args = args
 
-        data_dir = args.data_directory
-        if data_dir is None or not os.path.isdir(data_dir):
-            data_dir = util.get_data_dir()
-        self.data_dir = data_dir
+        self.data_dir = args.data_directory
+        self.data_subfolders = args.folders
 
-        self.data_subfolders = ['I', 'II']
         self.metadata_filename = 'label.txt'
         self.train_filename = 'train.txt'
         self.test_filename = 'test.txt'
@@ -151,18 +148,6 @@ class Loader():
             return all(x >= 0 and x < w for x in line[2][0::2]) and all(y >= 0 and y < h for y in line[2][1::2])
 
         return filter(filterfn, lines)
-        # def filterfn(line):
-        #     w, h = line[3]
-
-        #     for i in range(len(line[2])):
-        #         if i % 2 == 0:
-        #             line[2][i] = max(0.0, min(line[2][i], w-1.0))
-        #         else:
-        #             line[2][i] = max(0.0, min(line[2][i], h-1.0))
-        #     # return all(x >= 0 and x < w for x in line[2][0::2]) and all(y >= 0 and y < h for y in line[2][1::2])
-        #     return line
-
-        # return map(filterfn, lines)
 
     def map_expand_roi(self, lines):
         """
@@ -183,7 +168,7 @@ class Loader():
         生成训练样本集和测试样本集
         """
         args = self.args
-        train_ratio = args.train_ratio
+        ratio = args.ratio
 
         all_lines = self.parse_metadata()
         all_lines = self.map_expand_roi(all_lines)
@@ -191,7 +176,7 @@ class Loader():
         all_lines = list(self.stringnify_lines(all_lines))
 
         num_samples = len(all_lines)
-        num_train = int(num_samples * train_ratio)
+        num_train = int(num_samples * ratio)
         np.random.shuffle(all_lines)
 
         with open(os.path.join(self.data_dir, self.train_filename), 'w') as f:
@@ -212,6 +197,7 @@ class Loader():
         npimg = np.transpose(npimg, (2, 0, 1))
 
         _, ax = plt.subplots()
+        ax.set_title(img_name)
         ax.imshow(img)
 
         draw_rect(ax, rect)
@@ -220,67 +206,47 @@ class Loader():
 
         plt.show()
 
-    def show_images(self, lines1, lines2):
-        """
-        显示图像
-        """
-        assert(len(lines1) == len(lines2))
-        nrows = len(lines1)
-        ncols = 2
-        imgs = [lines1, lines2]
-
-        _, axs = plt.subplots(nrows, ncols)
-
-        for col in range(0, ncols):
-            for row in range(0, nrows):
-                ax = axs[row][col]
-                img_name, rect, landmarks, *_ = imgs[col][row]
-
-                img_path = os.path.join(self.data_dir, img_name)
-                img = Image.open(img_path)
-                npimg = np.array(img)
-                npimg = np.transpose(npimg, (2, 0, 1))
-
-                ax.imshow(img)
-
-                draw_rect(ax, rect)
-
-                ax.scatter(landmarks[0::2], landmarks[1::2],
-                           alpha=0.5, color='r', s=1)
-        plt.show()
-
     def show_image_demo(self):
 
         ori_lines = self.parse_metadata()
         roi_lines = list(self.map_expand_roi(ori_lines))
 
-        nrows = 10
-        # self.show_images(ori_lines[0:nrows], roi_lines[0:nrows])
-
-        for i in range(nrows):
+        for i in range(len(ori_lines)):
             self.show_image(ori_lines[i])
             self.show_image(roi_lines[i])
 
+    def show_image_for_name(self, image_name):
 
-def _get_argparser():
-    import argparse
-    parser = argparse.ArgumentParser(description='GenerateTrainTestList')
+        ori_lines = self.parse_metadata()
+        roi_lines = list(self.map_expand_roi(ori_lines))
 
-    parser.add_argument('--train-ratio', type=float, default=0.9,
-                        help='训练集所占比例(default: 0.9)')
-    parser.add_argument('--expand-ratio', type=float, default=0.25,
-                        help='roi扩增比例(default: 0.25)')
-
-    parser.add_argument('--show-image', default=False,
-                        action='store_true', help='显示图片(default: False)')
-
-    parser.add_argument('--data-directory', type=str,
-                        help='图片路径')
-    return parser
+        for i in range(len(ori_lines)):
+            if ori_lines[i][0] == image_name:
+                self.show_image(ori_lines[i])
+                self.show_image(roi_lines[i])
+                break
 
 
 def _parse_args():
-    args = _get_argparser().parse_args()
+    from util import parse_args, p
+    args = parse_args('GenerateTrainTestList', [
+        p('--ratio', type=float, default=0.9,
+            help='训练集所占比例(default: 0.9)'),
+        p('--expand-ratio', type=float, default=0.25,
+            help='roi扩增比例(default: 0.25)'),
+
+        p('--data-directory', type=str,
+            help='图片路径'),
+
+        p('--folders', type=str, nargs='+', default=['I', 'II'],
+            help='文件夹'),
+
+        p('--show', action='store_true', default=False,
+            help='show images'),
+
+        p('--image-name', type=str,
+            help='图片名称'),
+    ])
     print(args)
 
     return args
@@ -292,7 +258,11 @@ if __name__ == "__main__":
 
     loader = Loader(args)
 
-    if args.show_image:
-        loader.show_image_demo()
+    if args.show:
+        image_name = args.image_name
+        if image_name is None:
+            loader.show_image_demo()
+        else:
+            loader.show_image_for_name(image_name)
     else:
         loader.generate_train_test_list()

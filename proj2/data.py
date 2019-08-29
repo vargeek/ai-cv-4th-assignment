@@ -34,16 +34,17 @@ class Normalize(object):
     """
 
     def __call__(self, sample):
-        image, landmarks = sample['image'], sample['landmarks']
+        image, landmarks, image_name = sample['image'], sample['landmarks'], sample['image_name']
 
-        image_resize = np.asarray(image.resize(
-            (train_boarder, train_boarder), Image.BILINEAR), dtype=np.float32)
+        # image_resize = np.asarray(image.resize(
+        #     (train_boarder, train_boarder), Image.BILINEAR), dtype=np.float32)
 
-        image = channel_norm(image_resize)
+        image = channel_norm(image)
 
         return {
             'image': image,
             'landmarks': landmarks,
+            'image_name': image_name,
         }
 
 
@@ -54,13 +55,14 @@ class ToTensor(object):
     """
 
     def __call__(self, sample):
-        image, landmarks = sample['image'], sample['landmarks']
+        image, landmarks, image_name = sample['image'], sample['landmarks'], sample['image_name']
 
         image = np.expand_dims(image, axis=0)
 
         return {
             'image': torch.from_numpy(image),
             'landmarks': torch.from_numpy(landmarks),
+            'image_name': image_name,
         }
 
 
@@ -75,6 +77,8 @@ class FaceLandmarksDataset(Dataset):
         self.transform = transform
         if cache_in_memory:
             self.cache = {}
+        else:
+            self.cache = None
 
     def __len__(self):
         return len(self.lines)
@@ -89,15 +93,18 @@ class FaceLandmarksDataset(Dataset):
         img_path = os.path.join(self.data_dir, img_name)
 
         img = Image.open(img_path).convert('L')
-
         img_crop = img.crop(tuple(rect))
+        w, h = img_crop.size
+
+        img_crop = img_crop.resize(
+            (train_boarder, train_boarder), Image.BILINEAR)
+        img_crop = np.array(img_crop, dtype=np.float32)
 
         landmarks = np.array(landmarks, dtype=np.float32)
 
         # you should let your landmarks fit to the train_boarder(112)
         # please complete your code under this blank
         # your code:
-        w, h = img_crop.size
         x0, y0, *_ = rect
         landmarks[0::2] = (landmarks[0::2] - x0) * train_boarder / w
         landmarks[1::2] = (landmarks[1::2] - y0) * train_boarder / h
@@ -105,6 +112,7 @@ class FaceLandmarksDataset(Dataset):
         sample = {
             'image': img_crop,
             'landmarks': landmarks,
+            'image_name': img_name,
         }
         sample = self.transform(sample)
         if self.cache is not None:
@@ -112,7 +120,7 @@ class FaceLandmarksDataset(Dataset):
         return sample
 
 
-def load_data(phase, data_dir=None):
+def load_data(phase, data_dir=None, cache_in_memory=True):
     if data_dir is None:
         import util
         data_dir = util.get_data_dir()
@@ -131,28 +139,25 @@ def load_data(phase, data_dir=None):
             ToTensor(),
         ])
 
-    data_set = FaceLandmarksDataset(data_dir, lines, transform=tsfm)
+    data_set = FaceLandmarksDataset(
+        data_dir, lines, transform=tsfm, cache_in_memory=cache_in_memory)
     return data_set
 
 
-def get_train_test_set(data_dir=None):
-    train_set = load_data('train', data_dir)
-    valid_set = load_data('test', data_dir)
+def get_train_test_set(data_dir=None, cache_in_memory=True):
+    train_set = load_data('train', data_dir, cache_in_memory)
+    valid_set = load_data('test', data_dir, cache_in_memory)
     return train_set, valid_set
 
 
-def _get_argparser():
-    import argparse
-    parser = argparse.ArgumentParser(description='data')
-
-    parser.add_argument('--phase', type=str,
-                        default='train', help='train or test')
-
-    return parser
-
-
 def _parse_args():
-    args = _get_argparser().parse_args()
+    from util import parse_args, p
+
+    args = parse_args('data', [
+        p('--phase', type=str, metavar='train|test',
+          default='train', help='train or test'),
+    ])
+
     args.phase = args.phase.lower()
     return args
 
@@ -167,9 +172,11 @@ if __name__ == "__main__":
         sample = dataset[i]
         img = sample['image']
         landmarks = sample['landmarks']
+        image_name = sample['image_name']
         # 请画出人脸crop以及对应的landmarks
         # please complete your code under this blank
 
+        plt.title(image_name)
         plt.imshow(img[0])
         plt.scatter(landmarks[0::2], landmarks[1::2],
                     alpha=0.5, color='r')
