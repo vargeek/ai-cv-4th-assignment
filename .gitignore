@@ -120,9 +120,11 @@ CTestTestfile.cmake
 .vscode
 
 /proj1/Dataset
+/proj1/*/out
+/proj1/*/*.csv
+/proj1/Project_I(0)
 /proj2/data
 /proj2/trained_models
 /proj2/out
 /proj2/projectII_face_keypoints_detection
-
-/proj1/Project_I(0)
+__pycache__

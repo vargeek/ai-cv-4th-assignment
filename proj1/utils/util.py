@@ -14,7 +14,7 @@ def get_proj_dir():
     获取项目路径
     """
     try:
-        return os.path.dirname(os.path.realpath(__file__))
+        return os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
     except:
         return os.path.realpath(os.curdir)
 
@@ -23,12 +23,12 @@ def get_data_dir():
     """
     获取数据路径
     """
-    return os.path.join(get_proj_dir(), 'data')
+    return os.path.join(get_proj_dir(), 'Dataset')
 
 
 def parse_line(line):
     """
-    解析一行数据  
+    解析一行数据
     line: list<str>
     """
     img_name = line[0]
@@ -46,29 +46,26 @@ def stringnify_sample_line(line):
     return " ".join([line[0], *map(str, line[1]), *map(str, line[2])])
 
 
-def pre_process_args(args):
+def _pre_process_args(args):
     if hasattr(args, 'data_directory') and args.data_directory is None:
         args.data_directory = get_data_dir()
+    return args
 
 
 def p(*args, **kwargs):
     return args, kwargs
 
 
-def parse_args(description, params):
-    import argparse
-    parser = argparse.ArgumentParser(description=description)
-    for param in params:
-        args, kwargs = param
-        parser.add_argument(*args, **kwargs)
-
-    args = parser.parse_args()
-    pre_process_args(args)
-
-    return args
-
-
 def get_args_parser(description):
     import argparse
     parser = argparse.ArgumentParser(description=description)
+
+    parse_args = parser.__getattribute__('parse_args')
+
+    def _parse_args(*args, **kwargs):
+        args = parse_args(*args, **kwargs)
+        return _pre_process_args(args)
+
+    parser.__setattr__('parse_args', _parse_args)
+
     return parser, parser.add_argument

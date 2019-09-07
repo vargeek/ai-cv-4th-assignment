@@ -5,33 +5,29 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-_parser = None
-
 actions = {
     'train': 'show_train_loss',
 }
 
 
 def _get_args_parser():
-    global _parser
-    if _parser is None:
-        import util
-        _parser, p = util.get_args_parser('logloader')
+    import util
+    _parser, p = util.get_args_parser('logloader')
+    actions_str = '|'.join(actions.keys())
 
-        p('--save-directory', type=str, default='out', help='save directory')
+    p('--save-directory', type=str, default='out', help='save directory')
 
-        p('--uuid', type=str, default=None, help='sub directory')
+    p('--uuid', type=str, default=None, help='sub directory')
 
-        actions_str = '|'.join(actions.keys())
-        p('--action', '-a', metavar=actions_str,
-            type=str, default=None, help='sub directory')
+    p('--action', '-a', metavar=actions_str,
+        type=str, default=None, help='train: show_train_loss')
 
     return _parser
 
 
-def _get_args():
+def _get_args(args=None):
     import util
-    args = _get_args_parser().parse_args()
+    args = _get_args_parser().parse_args(args)
     util.pre_process_args(args)
     args.root_log_file = 'log.log'
     args.sub_log_file = 'log.log'
@@ -50,7 +46,7 @@ def readlines(logpath, filterfn=None):
 
 
 class LogLoader():
-    def __init__(self, args=_get_args_parser().parse_args([])):
+    def __init__(self, args=_get_args([])):
         self.args = args
 
     def load_rootlog(self):
