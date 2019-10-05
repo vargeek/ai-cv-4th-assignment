@@ -27,3 +27,10 @@ include_directories(${WEEK2_DIR})
 aux_source_directory(${WEEK2_DIR} WEEK2_FILES)
 add_executable("week2_test" "${WEEK2_FILES}" $<TARGET_OBJECTS:test_main>)
 add_test(NAME "week2_test" COMMAND "week2_test")
+
+# week10
+set (WEEK10_DIR ${PROJ_DIR}/week10)
+include_directories(${WEEK10_DIR})
+aux_source_directory(${WEEK10_DIR} WEEK10_FILES)
+add_executable("week10_test" "${WEEK10_FILES}" $<TARGET_OBJECTS:test_main>)
+add_test(NAME "week10_test" COMMAND "week10_test")
