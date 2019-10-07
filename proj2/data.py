@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # %%
 import torch
 import os
@@ -20,6 +21,9 @@ def channel_norm(img):
 
 
 def parse_line(line):
+    """
+    `str` => [`str`, `int`x4, `float`x42]
+    """
     tokens = line.strip().split()
     img_name = tokens[0]
     rect = list(map(lambda x: int(float(x)), tokens[1:5]))
@@ -151,15 +155,17 @@ def get_train_test_set(data_dir=None, cache_in_memory=True):
 
 
 def _parse_args():
-    from util import parse_args, p
+    from util import get_args_parser
+    parser, p = get_args_parser('data')
 
-    args = parse_args('data', [
-        p('--phase', type=str, metavar='train|test',
-          default='train', help='train or test'),
-    ])
+    p('--phase', type=str, metavar='train|test',
+          default='train', help='train or test')
 
+    args = parser.parse_args()
     args.phase = args.phase.lower()
+
     return args
+
 
 
 # %%

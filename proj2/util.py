@@ -1,4 +1,5 @@
 import os
+import matplotlib.pyplot as plt
 
 
 def readlines(filepath):
@@ -49,6 +50,7 @@ def stringnify_sample_line(line):
 def pre_process_args(args):
     if hasattr(args, 'data_directory') and args.data_directory is None:
         args.data_directory = get_data_dir()
+    return args
 
 
 def p(*args, **kwargs):
@@ -71,4 +73,49 @@ def parse_args(description, params):
 def get_args_parser(description):
     import argparse
     parser = argparse.ArgumentParser(description=description)
+
+    parse_args = parser.__getattribute__('parse_args')
+
+    def _parse_args(*args, **kwargs):
+        args = parse_args(*args, **kwargs)
+        return pre_process_args(args)
+
+    parser.__setattr__('parse_args', _parse_args)
+
     return parser, parser.add_argument
+
+def draw_losses(losses, block=True, min_loss_key='valid_loss'):
+
+    fig = plt.figure(0)
+    fig.clear()
+
+    plt1 = fig.subplots(1, 1)
+    # plt1, plt2 = plts[0], plts[1]
+
+    title = ''
+    if min_loss_key:
+        loss = losses.get(min_loss_key)
+        if loss is not None:
+            min_loss = min(loss)
+            title = '{}: {:.6f}'.format(min_loss_key, min_loss)
+    # for acc_key in max_acc_keys:
+    #     acc = accs.get(acc_key)
+    #     if acc is not None:
+    #         max_acc = max(acc)
+    #         title = '{}, {}: {:.6f}'.format(title, acc_key, max_acc)
+
+    plt1.set_title(title)
+
+    # plt1.clear()
+    for v in losses.values():
+        plt1.plot(range(len(v)), v, marker='.')
+    plt1.legend(losses.keys())
+
+    # plt2.clear()
+    # for v in accs.values():
+    #     plt2.plot(range(len(v)), v, marker='.')
+    # plt2.legend(accs.keys())
+
+    plt.show(block=block)
+    if not block:
+        plt.pause(0.000001)

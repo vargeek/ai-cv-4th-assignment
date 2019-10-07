@@ -40,9 +40,17 @@ python -m generate_train_test_list
 
 ### 7. 完成 `Test\Predict\Finetune` 代码
 
+### 结果
+
+![result](results/stage1/XYnKbswu3xMQgWgMmLMNqO/result.png)
+
 ## stage 2
 
 > 总之，希望大家能给出一个秒杀 stage1 的 model
+
+`NetBN`
+
+![result](results/stage2/qLD2TuH3S0ZuuMYPwBgvPP/result.png)
 
 ### 1. 关于数据
 

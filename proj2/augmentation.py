@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -144,24 +146,25 @@ def generate_samples(args):
 
 
 def _parse_args():
-    from util import p
-    args = util.parse_args('augmentation', [
-        p('--data-directory', type=str, default=None, help='data directory'),
+    from util import get_args_parser
+    parser, p = get_args_parser('augmentation')
+    p('--data-directory', type=str, default=None, help='data directory')
 
-        p('--dirs', '-d', type=str, nargs='+',
-          default=['I:III', 'II:IV'], help='sub directories'),
+    p('--dirs', '-d', type=str, nargs='+',
+        default=['I:III', 'II:IV'], help='sub directories')
 
-        p('--augmentation', '-a', type=str, nargs='+',
-          default=['flipx'],
-          metavar='rotate|flipx|gamma_correction',
-          help='augmentation actions'),
+    p('--augmentation', '-a', type=str, nargs='+',
+        default=['flipx'],
+        metavar='rotate|flipx|gamma_correction',
+        help='augmentation actions')
 
-        p('--gamma', type=float,
-          default=2.0, help='gamma'),
+    p('--gamma', type=float,
+        default=2.0, help='gamma')
 
-        p('--angle', type=float, default='10',
-          help='max rotate angle'),
-    ])
+    p('--angle', type=float, default='10',
+        help='max rotate angle')
+
+    args = parser.parse_args()
 
     args.dirs = [[x.strip() for x in d.strip().split(':')] for d in args.dirs]
     args.filename = 'label.txt'

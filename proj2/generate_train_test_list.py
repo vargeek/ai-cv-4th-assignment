@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # %%
 import matplotlib.patches as patches
 from matplotlib.path import Path
@@ -228,25 +230,28 @@ class Loader():
 
 
 def _parse_args():
-    from util import parse_args, p
-    args = parse_args('GenerateTrainTestList', [
-        p('--ratio', type=float, default=0.9,
-            help='训练集所占比例(default: 0.9)'),
-        p('--expand-ratio', type=float, default=0.25,
-            help='roi扩增比例(default: 0.25)'),
+    from util import get_args_parser
+    parser, arg = get_args_parser('GenerateTrainTestList')
 
-        p('--data-directory', type=str,
-            help='图片路径'),
+    arg('--ratio', type=float, default=0.9,
+            help='训练集所占比例(default: 0.9)')
+    arg('--expand-ratio', type=float, default=0.25,
+            help='roi扩增比例(default: 0.25)')
 
-        p('--folders', type=str, nargs='+', default=['I', 'II'],
-            help='文件夹'),
+    arg('--data-directory', type=str,
+            help='图片路径')
 
-        p('--show', action='store_true', default=False,
-            help='show images'),
+    arg('--folders', type=str, nargs='+', default=['I', 'II'],
+            help='文件夹')
 
-        p('--image-name', type=str,
-            help='图片名称'),
-    ])
+    arg('--show', action='store_true', default=False,
+            help='show images')
+
+    arg('--image-name', type=str,
+            help='图片名称')
+
+    args = parser.parse_args()
+
     print(args)
 
     return args
