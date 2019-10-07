@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 actions = {
     'train': 'show_train_loss',
+    'best': 'get_best_val',
 }
 
 
@@ -13,6 +14,8 @@ class LogAnalyser():
     def __init__(self, args, actions=actions):
         self.args = args
         self.actions = actions
+        from utils.util import show_train_loss
+        self._show_train_loss = show_train_loss
 
     def run(self):
         args = self.args
@@ -94,24 +97,33 @@ class LogAnalyser():
         train_acc = data['train_acc']
         valid_acc = data['valid_acc']
 
-        fig = plt.figure(0)
-        fig.clear()
-        plts = fig.subplots(2, 1)
-        plt1, plt2 = plts[0], plts[1]
+        self._show_train_loss(train_losses, valid_losses, train_acc, valid_acc)
 
-        # plt1.clear()
-        plt1.plot(range(len(train_losses)), train_losses, marker='o')
-        plt1.plot(range(len(valid_losses)), valid_losses, marker='o')
-        plt1.legend(['train_losses', 'valid_losses'])
+    def get_best_val(self):
+        data = self.load_execlog_df('train', 'loss')
 
-        # plt2.clear()
-        plt2.plot(range(len(train_acc)), train_acc, marker='o')
-        plt2.plot(range(len(valid_acc)), valid_acc, marker='o')
-        plt2.legend(['train_acc', 'valid_acc'])
+        best_loss_epoch = data.iloc[0]['epoch']
+        best_acc_epoch = data.iloc[0]['epoch']
+        best_loss = data.iloc[0]['valid_loss']
+        best_acc = data.iloc[0]['valid_acc']
+        for i in range(len(data)):
+            item = data.iloc[i]
+            epoch = item['epoch']
+            valid_loss = item['valid_loss']
+            valid_acc = item['valid_acc']
 
-        plt.show()
-        # plt.show(block=False)
-        # plt.pause(0.000001)
+            if valid_loss < best_loss:
+                best_loss = valid_loss
+                best_loss_epoch = epoch
+
+            if valid_acc > best_acc:
+                best_acc = valid_acc
+                best_acc_epoch = epoch
+
+        print('best valid loss: epoch: {}, loss: {}'.format(
+            best_loss_epoch, best_loss))
+        print('best valid acc: epoch: {}, acc: {}'.format(
+            best_acc_epoch, best_acc))
 
     @staticmethod
     def main(args):

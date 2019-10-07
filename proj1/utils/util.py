@@ -1,4 +1,5 @@
 import os
+import matplotlib.pyplot as plt
 
 
 def readlines(filepath):
@@ -69,3 +70,69 @@ def get_args_parser(description):
     parser.__setattr__('parse_args', _parse_args)
 
     return parser, parser.add_argument
+
+def show_train_loss(train_losses, valid_losses, train_acc, valid_acc, max_valid_acc=None, min_valid_loss=None, block=True):
+    if max_valid_acc is None and len(valid_acc) > 0:
+        max_valid_acc = max(valid_acc)
+    if min_valid_loss is None and len(valid_losses) > 0:
+        min_valid_loss = min(valid_losses)
+
+    fig = plt.figure(0)
+    fig.clear()
+
+    plts = fig.subplots(2, 1)
+    plt1, plt2 = plts[0], plts[1]
+
+    def tostr(val):
+        return '{:.6f}'.format(val) if val is not None else '_'
+    plt1.set_title('acc: {}, loss: {}\n'.format(tostr(max_valid_acc), tostr(min_valid_loss)))
+
+    # plt1.clear()
+    plt1.plot(range(len(train_losses)), train_losses, marker='.')
+    plt1.plot(range(len(valid_losses)), valid_losses, marker='.')
+    plt1.legend(['train_losses', 'valid_losses'])
+
+    # plt2.clear()
+    plt2.plot(range(len(train_acc)), train_acc, marker='.')
+    plt2.plot(range(len(valid_acc)), valid_acc, marker='.')
+    plt2.legend(['train_acc', 'valid_acc'])
+
+    plt.show(block=block)
+    if not block:
+        plt.pause(0.000001)
+
+def show_losses_accs(losses, accs, block=True, min_loss_key='val_loss', max_acc_keys=['val_acc', 'val_acc_s', 'val_acc_c']):
+
+    fig = plt.figure(0)
+    fig.clear()
+
+    plts = fig.subplots(2, 1)
+    plt1, plt2 = plts[0], plts[1]
+
+    title = ''
+    if min_loss_key:
+        loss = losses.get(min_loss_key)
+        if loss is not None:
+            min_loss = min(loss)
+            title = '{}: {:.6f}'.format(min_loss_key, min_loss)
+    for acc_key in max_acc_keys:
+        acc = accs.get(acc_key)
+        if acc is not None:
+            max_acc = max(acc)
+            title = '{}, {}: {:.6f}'.format(title, acc_key, max_acc)
+
+    plt1.set_title(title)
+
+    # plt1.clear()
+    for v in losses.values():
+        plt1.plot(range(len(v)), v, marker='.')
+    plt1.legend(losses.keys())
+
+    # plt2.clear()
+    for v in accs.values():
+        plt2.plot(range(len(v)), v, marker='.')
+    plt2.legend(accs.keys())
+
+    plt.show(block=block)
+    if not block:
+        plt.pause(0.000001)

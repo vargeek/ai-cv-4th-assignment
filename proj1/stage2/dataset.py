@@ -3,7 +3,7 @@
 import torch
 import os
 import pandas as pd
-from Classes_Network import Net
+from Species_Network import Net
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms
@@ -15,23 +15,22 @@ CUR_DIR = os.path.curdir if IPYTHON_MODE else os.path.dirname(
 train_transform = transforms.Compose([
     # transforms.Resize((500, 500)),
     # transforms.RandomHorizontalFlip(),
-    # transforms.RandomRotation(10),
     transforms.ToTensor(),
 ])
 valid_transform = transforms.Compose([
     # transforms.Resize((500, 500)),
     transforms.ToTensor()
 ])
-TRAIN_ANNO = 'Classes_train_annotation.csv'
-VALID_ANNO = 'Classes_val_annotation.csv'
+TRAIN_ANNO = 'Species_train_annotation.csv'
+VALID_ANNO = 'Species_val_annotation.csv'
 phases = {
     'train': (TRAIN_ANNO, train_transform),
     'valid': (VALID_ANNO, valid_transform),
 }
-CLASSES = ['Mammals', 'Birds']
+SPECIES = ['rabbits', 'rats', 'chickens']
 
 
-class ClassesDataset(Dataset):
+class SpeciesDataset(Dataset):
     def __init__(self, root_dir, annotations, transform=None, cache_in_memory=True, path_field=False):
         self.root_dir = root_dir
         self.resize_transform = transforms.Resize((500, 500))
@@ -65,11 +64,11 @@ class ClassesDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        classes = int(item['classes'])
+        species = int(item['species'])
 
         sample = {
             'image': image,
-            'classes': classes,
+            'species': species,
         }
         if self.path_field:
             sample['path'] = item['path']
@@ -88,7 +87,7 @@ def load_dataset(args, phase, path_field):
     filename, transform = phases[phase]
 
     data = load_annotations_file(filename)
-    return ClassesDataset(args.data_directory, data, transform, not args.no_cache_image, path_field)
+    return SpeciesDataset(args.data_directory, data, transform, not args.no_cache_image, path_field)
 
 
 def get_train_test_set(args, path_field=False):
@@ -104,7 +103,7 @@ def _get_args(args=None):
     sys.path.append(os.path.join(CUR_DIR, '..'))
     from utils import util
 
-    parser, arg = util.get_args_parser('Classes_make_anno')
+    parser, arg = util.get_args_parser('dataset')
 
     arg('--data-directory', type=str,
         help='data are loading from here')
@@ -147,11 +146,11 @@ if __name__ == "__main__":
         idx = random.randint(0, len(dataset)-1)
         sample = dataset[idx]
         print(sample['path'])
-        print(idx, sample['image'].shape, CLASSES[sample['classes']])
+        print(idx, sample['image'].shape, SPECIES[sample['species']])
 
         img = sample['image']
         plt.imshow(transforms.ToPILImage()(img))
-        plt.title('{}: {}'.format(idx, CLASSES[sample['classes']]))
+        plt.title('{}: {}'.format(idx, SPECIES[sample['species']]))
         plt.show()
 
 

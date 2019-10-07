@@ -22,6 +22,8 @@ class LossTracer():
         self.curr_epoch_title = ''
         self.log = executor.log
         self.execlog = executor.execlog
+        self.min_valid_loss = None
+        self.max_valid_acc = None
 
     def epoch_reset(self):
         self.train_losses = []
@@ -65,31 +67,16 @@ class LossTracer():
         self.valid_losses.append(valid_loss)
         self.train_acc.append(train_acc)
         self.valid_acc.append(valid_acc)
+        self.max_valid_acc = valid_acc if self.max_valid_acc is None else max(self.max_valid_acc, valid_acc)
+        self.min_valid_loss = valid_loss if self.min_valid_loss is None else min(self.min_valid_loss, valid_loss)
+        
         self.draw_epoch_loss()
 
     def draw_epoch_loss(self):
-        train_losses = self.train_losses
-        valid_losses = self.valid_losses
-        train_acc = self.train_acc
-        valid_acc = self.valid_acc
 
-        fig = plt.figure(0)
-        fig.clear()
-        plts = fig.subplots(2, 1)
-        plt1, plt2 = plts[0], plts[1]
+        from utils.util import show_train_loss
 
-        # plt1.clear()
-        plt1.plot(range(len(train_losses)), train_losses, marker='o')
-        plt1.plot(range(len(valid_losses)), valid_losses, marker='o')
-        plt1.legend(['train_losses', 'valid_losses'])
-
-        # plt2.clear()
-        plt2.plot(range(len(train_acc)), train_acc, marker='o')
-        plt2.plot(range(len(valid_acc)), valid_acc, marker='o')
-        plt2.legend(['train_acc', 'valid_acc'])
-
-        plt.show(block=False)
-        plt.pause(0.000001)
+        show_train_loss(self.train_losses, self.valid_losses, self.train_acc, self.valid_acc, self.max_valid_acc, self.min_valid_loss, block=False)
 
     def report_batch_loss(self, num_batch_samples, num_samples, total_samples, num_batch, total_batch, loss, corrected):
         """
@@ -111,6 +98,8 @@ class LossTracer():
                     num_batch_samples,
                 )
             )
+
+            # self.log(self.executor.optimizer.param_groups)
 
 
 class Executor():
@@ -147,7 +136,7 @@ class Executor():
             os.makedirs(save_directory)
 
         # 本次运行的模型、日志子目录
-        if not os.path.exists(self.exec_save_dir):
+        if self.should_make_exec_save_dir() and not os.path.exists(self.exec_save_dir):
             os.makedirs(self.exec_save_dir)
 
     def _init_log(self, args):
@@ -167,10 +156,14 @@ class Executor():
         self.rootlog = logutil.get_struct_log(
             root_logger.info, execid=self.execid, phase=args.phase)
 
-        exec_log_file = os.path.join(self.exec_save_dir, 'log.log')
-        exec_logger = logutil.file_logger('file.exec', exec_log_file)
-        self.execlog = logutil.get_struct_log(exec_logger.info)
-
+        if self.should_make_exec_save_dir():
+            exec_log_file = os.path.join(self.exec_save_dir, 'log.log')
+            exec_logger = logutil.file_logger('file.exec', exec_log_file)
+            self.execlog = logutil.get_struct_log(exec_logger.info)
+        else:
+            def nop(*args, **kwargs):
+                pass
+            self.execlog = nop
         self.rootlog(args=args)
 
     def _init_tracer(self, args):
@@ -184,17 +177,58 @@ class Executor():
         use_cuda = not args.no_cuda and torch.cuda.is_available()
         self.device = torch.device('cuda' if use_cuda else 'cpu')
 
+    def _import_dataset(self):
+        raise NotImplementedError
+
     def _init_data_loader(self, args):
         """
         加载数据集: 测试集、验证集
         """
-        raise NotImplementedError
+        dataset = self._import_dataset()
+
+        train_set, test_set = dataset.get_train_test_set(
+            args)
+
+        self.train_data_loader = torch.utils.data.DataLoader(
+            train_set, batch_size=args.batch_size, shuffle=True)
+        self.valid_data_loader = torch.utils.data.DataLoader(
+            test_set, batch_size=args.test_batch_size)
 
     def _init_net_model(self, args):
         """
         网络模型
         """
+        self.model = None
         raise NotImplementedError
+
+    def init_parameters_kaiming(self):
+        """
+        使用`kaiming_normal_`初始化参数
+        """
+        for p in self.model.parameters():
+            if len(p.shape) >= 2:
+                nn.init.kaiming_normal_(p)
+
+    def init_parameters_xavier(self):
+        """
+        使用`xavier_normal_`初始化参数
+        """
+        for p in self.model.parameters():
+            nn.init.xavier_normal_(p)
+
+    def load_state_dict(self):
+        """
+        加载模型
+        """
+        filepath = self.args.model_file
+        if filepath is None:
+            return
+
+        self.log("====> Loading Model: {}".format(filepath))
+        self.execlog(model_file=filepath, tag='load')
+        state_dict = torch.load(filepath)
+        self.model.load_state_dict(state_dict)
+
 
     def _init_criterion(self, args):
         """
@@ -216,6 +250,25 @@ class Executor():
 
     def _train_phase_(self):
         raise NotImplementedError
+
+    def should_make_exec_save_dir(self):
+        return self.args.phase == 'train'
+
+    def get_predict_dataset(self):
+        tokens = self.args.predict_indices.split('@')
+
+        predict_indices = tokens[0]
+        dataset_name = tokens[1] if len(tokens) > 1 else 'val'
+
+        dataset = self.valid_data_loader.dataset if dataset_name.lower(
+        ) == 'val' else self.train_data_loader.dataset
+
+        if predict_indices == 'all':
+            indices = range(len(dataset))
+        else:
+            indices = map(int, filter(lambda x: len(
+                x) > 0, predict_indices.split(',')))
+        return dataset, indices
 
     def run(self):
         phase = self.args.phase
@@ -275,6 +328,9 @@ class Executor():
 
         arg('--save-model', action='store_true', default=True,
             help='save the current Model')
+
+        arg('--model', type=str, default='Net',
+            help='model name')
 
         arg('--save-directory', type=str, default='out',
             help='learnt models and logs are saving here')

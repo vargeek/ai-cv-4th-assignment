@@ -14,7 +14,7 @@ CUR_DIR = os.path.curdir if IPYTHON_MODE else os.path.dirname(
     __file__)
 sys.path.append(os.path.join(CUR_DIR, '..'))
 
-CLASSES = ['Mammals', 'Birds']
+SPECIES = ['rabbits', 'rats', 'chickens']
 
 
 def importExecutor():
@@ -26,29 +26,21 @@ class Classifier(importExecutor()):
     def __init__(self, args):
         super(Classifier, self).__init__(args)
 
-    def _init_data_loader(self, args):
-        """
-        加载数据集: 测试集、验证集
-        """
-        from dataset import get_train_test_set
-        train_set, test_set = get_train_test_set(
-            args)
-
-        self.train_data_loader = torch.utils.data.DataLoader(
-            train_set, batch_size=args.batch_size, shuffle=True)
-        self.valid_data_loader = torch.utils.data.DataLoader(
-            test_set, batch_size=args.test_batch_size)
+    def _import_dataset(self):
+        import dataset
+        return dataset
 
     def _init_net_model(self, args):
         """
         网络模型
         """
-        import Classes_Network
-        models = {
-            'Net':  Classes_Network.Net,
-            'BN': Classes_Network.Net_BN,
-        }
-        Net = models.get(args.model, Classes_Network.Net)
+        import Species_Network
+
+        name = args.model
+        if name != 'Net':
+            name = 'Net_{}'.format(name)
+
+        Net = getattr(Species_Network, name) if hasattr(Species_Network, name) else Species_Network.Net
 
         self.model = Net().to(self.device)
         if self.args.model_file is None:
@@ -60,7 +52,6 @@ class Classifier(importExecutor()):
         """
         损失函数
         """
-        # self.criterion = nn.MSELoss()
         self.criterion = nn.CrossEntropyLoss()
 
     def _init_optimizer(self, args):
@@ -69,7 +60,6 @@ class Classifier(importExecutor()):
         """
         self.optimizer = optim.SGD(
             self.model.parameters(), lr=args.lr, momentum=args.momentum)
-        # self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
 
     def _init_lr_scheduler(self, args):
         """
@@ -96,7 +86,7 @@ class Classifier(importExecutor()):
 
         for batch_idx, batch in enumerate(data_loader):
             inputs = batch['image'].to(self.device)
-            ground_truth = batch['classes'].to(self.device)
+            ground_truth = batch['species'].to(self.device)
 
             if is_training:
                 self.optimizer.zero_grad()
@@ -157,37 +147,15 @@ class Classifier(importExecutor()):
                 inputs = sample['image']
                 inputs = inputs.expand(1, *inputs.size()).to(self.device)
 
-                ground_truth = sample['classes']
+                ground_truth = sample['species']
 
                 outputs = self.model(inputs)
                 _, predicted = torch.max(outputs, 1)
 
                 plt.imshow(transforms.ToPILImage()(inputs.squeeze(0)))
-                plt.title('predicted classes: {}\nground-truth classes: {}'.format(
-                    CLASSES[predicted.item()], CLASSES[ground_truth]))
+                plt.title('predicted species: {}\nground-truth species: {}'.format(
+                    SPECIES[predicted.item()], SPECIES[ground_truth]))
                 plt.show()
-
-    def run(self):
-        phase = self.args.phase
-
-        fn_name = '_{}_phase_'.format(phase)
-        fn = self.__getattribute__(fn_name)
-        if fn is None:
-            raise Exception('unknown phase: {}'.format(phase))
-        fn()
-
-    @classmethod
-    def get_phases(self):
-        import re
-
-        regexp = re.compile(r'_([\w]+)_phase_')
-
-        def get_phase(name):
-            result = regexp.findall(name)
-            return result[0] if result else None
-
-        return filter(lambda x: x is not None, map(get_phase, dir(self)))
-
 
 def _get_args(args=None):
     parser, _ = Classifier.get_args_parser('Classifier')

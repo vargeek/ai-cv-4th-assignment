@@ -6,7 +6,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 IPYTHON_MODE = 'get_ipython' in dir()
-CUR_DIR = os.path.curdir if IPYTHON_MODE else os.path.dirname(__file__)
+CUR_DIR = os.path.curdir if IPYTHON_MODE else os.path.dirname(
+    __file__)
 sys.path.append(os.path.join(CUR_DIR, '..'))
 
 

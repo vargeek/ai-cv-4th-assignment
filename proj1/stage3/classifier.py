@@ -8,6 +8,7 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 import matplotlib.pyplot as plt
 from torchvision.transforms import transforms
+from loss_tracer import LossTracer
 
 IPYTHON_MODE = 'get_ipython' in dir()
 CUR_DIR = os.path.curdir if IPYTHON_MODE else os.path.dirname(
@@ -15,6 +16,7 @@ CUR_DIR = os.path.curdir if IPYTHON_MODE else os.path.dirname(
 sys.path.append(os.path.join(CUR_DIR, '..'))
 
 CLASSES = ['Mammals', 'Birds']
+SPECIES = ['rabbits', 'rats', 'chickens']
 
 
 def importExecutor():
@@ -26,29 +28,24 @@ class Classifier(importExecutor()):
     def __init__(self, args):
         super(Classifier, self).__init__(args)
 
-    def _init_data_loader(self, args):
-        """
-        加载数据集: 测试集、验证集
-        """
-        from dataset import get_train_test_set
-        train_set, test_set = get_train_test_set(
-            args)
+    def _import_dataset(self):
+        import dataset
+        return dataset
 
-        self.train_data_loader = torch.utils.data.DataLoader(
-            train_set, batch_size=args.batch_size, shuffle=True)
-        self.valid_data_loader = torch.utils.data.DataLoader(
-            test_set, batch_size=args.test_batch_size)
+    def _init_tracer(self, args):
+        self.tracer = LossTracer(args, self)
 
     def _init_net_model(self, args):
         """
         网络模型
         """
-        import Classes_Network
-        models = {
-            'Net':  Classes_Network.Net,
-            'BN': Classes_Network.Net_BN,
-        }
-        Net = models.get(args.model, Classes_Network.Net)
+        import Multi_Network
+
+        name = args.model
+        if name != 'Net':
+            name = 'Net_{}'.format(name)
+
+        Net = getattr(Multi_Network, name) if hasattr(Multi_Network, name) else Multi_Network.Net
 
         self.model = Net().to(self.device)
         if self.args.model_file is None:
@@ -60,7 +57,6 @@ class Classifier(importExecutor()):
         """
         损失函数
         """
-        # self.criterion = nn.MSELoss()
         self.criterion = nn.CrossEntropyLoss()
 
     def _init_optimizer(self, args):
@@ -69,7 +65,6 @@ class Classifier(importExecutor()):
         """
         self.optimizer = optim.SGD(
             self.model.parameters(), lr=args.lr, momentum=args.momentum)
-        # self.optimizer = optim.Adam(self.model.parameters(), lr=args.lr)
 
     def _init_lr_scheduler(self, args):
         """
@@ -91,22 +86,28 @@ class Classifier(importExecutor()):
             self.model.eval()
 
         running_loss = 0.0
-        num_corrected = 0
+        num_corrected_s = 0
+        num_corrected_c = 0
         num_samples = 0
 
         for batch_idx, batch in enumerate(data_loader):
             inputs = batch['image'].to(self.device)
-            ground_truth = batch['classes'].to(self.device)
+            ground_truth_s = batch['species'].to(self.device)
+            ground_truth_c = batch['classes'].to(self.device)
 
             if is_training:
                 self.optimizer.zero_grad()
 
             with torch.set_grad_enabled(is_training):
-                outputs = self.model(inputs)
+                outputs_species, outputs_classes = self.model(inputs)
 
-                _, predicted = torch.max(outputs, 1)
+                _, predicted_species = torch.max(outputs_species, 1)
+                _, predicted_classes = torch.max(outputs_classes, 1)
 
-                loss = self.criterion(outputs, ground_truth)
+                loss_species = self.criterion(outputs_species, ground_truth_s)
+                loss_classes = self.criterion(outputs_classes, ground_truth_c)
+                # loss = loss_species
+                loss = loss_species * 0.9 + loss_classes * 0.1
 
                 if is_training:
                     loss.backward()
@@ -117,15 +118,18 @@ class Classifier(importExecutor()):
             loss_value = loss.item()
             running_loss += loss_value
 
-            corrected = torch.sum(predicted == ground_truth).item()
-            num_corrected += corrected
+            corrected_s = torch.sum(predicted_species == ground_truth_s).item()
+            corrected_c = torch.sum(predicted_classes == ground_truth_c).item()
+            num_corrected_s += corrected_s
+            num_corrected_c += corrected_c
 
             tracer.report_batch_loss(
-                num_batch_samples, num_samples, total_samples, batch_idx + 1, total_batch, loss_value, corrected)
+                num_batch_samples, num_samples, total_samples, batch_idx + 1, total_batch, loss_value)
 
         running_loss /= total_batch * 1.0
-        running_acc = num_corrected * 1.0 / total_samples
-        return running_loss, running_acc
+        running_acc_s = num_corrected_s * 1.0 / total_samples
+        running_acc_c = num_corrected_c * 1.0 / total_samples
+        return running_loss, running_acc_s, running_acc_c
 
     # phases
     def _train_phase_(self):
@@ -136,11 +140,20 @@ class Classifier(importExecutor()):
         for idx in range(args.epochs):
             tracer.epoch_step(idx)
 
-            train_loss, train_acc = self.train_or_validate_an_epoch(True)
-            valid_loss, valid_acc = self.train_or_validate_an_epoch(False)
+            train_loss, train_acc_s, train_acc_c = self.train_or_validate_an_epoch(True)
+            valid_loss, valid_acc_s, valid_acc_c = self.train_or_validate_an_epoch(False)
+            val_acc = (valid_acc_s+valid_acc_c) if (valid_acc_s == 0 or valid_acc_c == 0) else 2.0/(1.0/valid_acc_s + 1.0/valid_acc_c)
 
-            tracer.epoch_loss_report(
-                train_loss, valid_loss, train_acc, valid_acc)
+            tracer.epoch_loss_report({
+                'train_loss': train_loss, 
+                'valid_loss': valid_loss, 
+                },{
+                'train_acc_s': train_acc_s, 
+                'train_acc_c': train_acc_c,
+                'val_acc_s': valid_acc_s,
+                'val_acc_c': valid_acc_c,
+                'val_acc': val_acc,
+                })
 
     def _test_phase_(self):
         print('xxx')
@@ -157,37 +170,15 @@ class Classifier(importExecutor()):
                 inputs = sample['image']
                 inputs = inputs.expand(1, *inputs.size()).to(self.device)
 
-                ground_truth = sample['classes']
+                ground_truth = sample['species']
 
                 outputs = self.model(inputs)
                 _, predicted = torch.max(outputs, 1)
 
                 plt.imshow(transforms.ToPILImage()(inputs.squeeze(0)))
-                plt.title('predicted classes: {}\nground-truth classes: {}'.format(
-                    CLASSES[predicted.item()], CLASSES[ground_truth]))
+                plt.title('predicted species: {}\nground-truth species: {}'.format(
+                    SPECIES[predicted.item()], SPECIES[ground_truth]))
                 plt.show()
-
-    def run(self):
-        phase = self.args.phase
-
-        fn_name = '_{}_phase_'.format(phase)
-        fn = self.__getattribute__(fn_name)
-        if fn is None:
-            raise Exception('unknown phase: {}'.format(phase))
-        fn()
-
-    @classmethod
-    def get_phases(self):
-        import re
-
-        regexp = re.compile(r'_([\w]+)_phase_')
-
-        def get_phase(name):
-            result = regexp.findall(name)
-            return result[0] if result else None
-
-        return filter(lambda x: x is not None, map(get_phase, dir(self)))
-
 
 def _get_args(args=None):
     parser, _ = Classifier.get_args_parser('Classifier')
@@ -203,5 +194,3 @@ if __name__ == "__main__":
     classifier = Classifier(args)
     classifier.run()
 
-
-# %%
