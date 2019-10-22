@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -35,6 +36,8 @@ class Net(nn.Module):
         # 24*4*4 -> 40*4*4
         self.conv4_1 = nn.Conv2d(24, 40, kernel_size=3, padding=1)
         self.prelu4_1 = nn.PReLU()
+
+        ####### prediction branch #######
         # 40*4*4 -> 80*4*4
         self.conv4_2 = nn.Conv2d(40, 80, kernel_size=3, padding=1)
         self.prelu4_2 = nn.PReLU()
@@ -43,7 +46,19 @@ class Net(nn.Module):
         self.preluip1 = nn.PReLU()
         self.ip2 = nn.Linear(128, 128)
         self.preluip2 = nn.PReLU()
-        self.ip3 = nn.Linear(128, 42)
+        self.landmarks = nn.Linear(128, 42)
+
+        ####### classification branch #######
+        # 40*4*4 -> 40*4*4
+        self.conv4_2_cls = nn.Conv2d(40, 40, kernel_size=3, padding=1)
+        self.relu_conv4_2_cls = nn.PReLU()
+
+        self.ip1_cls = nn.Linear(40 * 4 * 4, 128)
+        self.relu_ip1_cls = nn.PReLU()
+        self.ip2_cls = nn.Linear(128, 128)
+        self.relu_ip2_cls = nn.PReLU()
+        self.ip3_cls = nn.Linear(128, 2)
+        # self.face_score = nn.Softmax(dim=1)
 
     def forward(self, x):
         """
@@ -62,15 +77,26 @@ class Net(nn.Module):
         x = self.pool3(x)
 
         x = self.prelu4_1(self.conv4_1(x))
-        x = self.prelu4_2(self.conv4_2(x))
 
-        x = x.view(-1, 80 * 4 * 4)
-        x = self.preluip1(self.ip1(x))
+        ####### prediction branch #######
+        x_pred = self.prelu4_2(self.conv4_2(x))
 
-        x = self.preluip2(self.ip2(x))
-        x = self.ip3(x)
+        x_pred = x_pred.view(-1, 80 * 4 * 4)
+        x_pred = self.preluip1(self.ip1(x_pred))
 
-        return x
+        x_pred = self.preluip2(self.ip2(x_pred))
+        landmarks = self.landmarks(x_pred)
+
+        ####### classification branch #######
+        x_cls = self.relu_conv4_2_cls(self.conv4_2_cls(x))
+
+        x_cls = x_cls.view(-1, 40 * 4 * 4)
+        x_cls = self.relu_ip1_cls(self.ip1_cls(x_cls))
+        x_cls = self.relu_ip2_cls(self.ip2_cls(x_cls))
+        face = self.ip3_cls(x_cls)
+
+        return landmarks, face
+        # return face
 
 
 class Net_BN(nn.Module):
@@ -106,17 +132,30 @@ class Net_BN(nn.Module):
         # 24*4*4 -> 40*4*4
         self.conv4_1 = nn.Conv2d(24, 40, kernel_size=3, padding=1)
         self.prelu4_1 = nn.PReLU()
+
+        ####### prediction branch #######
         # 40*4*4 -> 80*4*4
         self.conv4_2 = nn.Conv2d(40, 80, kernel_size=3, padding=1)
         self.prelu4_2 = nn.PReLU()
-
 
         self.ip1 = nn.Linear(80 * 4 * 4, 128)
         self.preluip1 = nn.PReLU()
         self.ip2 = nn.Linear(128, 128)
         self.preluip2 = nn.PReLU()
-        self.bn_ip3 =  nn.BatchNorm1d(128)
-        self.ip3 = nn.Linear(128, 42)
+        self.landmarks_bn = nn.BatchNorm1d(128)
+        self.landmarks = nn.Linear(128, 42)
+
+        ####### classification branch #######
+        # 40*4*4 -> 40*4*4
+        self.conv4_2_cls = nn.Conv2d(40, 40, kernel_size=3, padding=1)
+        self.relu_conv4_2_cls = nn.PReLU()
+
+        self.ip1_cls = nn.Linear(40 * 4 * 4, 128)
+        self.relu_ip1_cls = nn.PReLU()
+        self.ip2_cls = nn.Linear(128, 128)
+        self.relu_ip2_cls = nn.PReLU()
+        self.ip3_cls = nn.Linear(128, 2)
+        # self.face_score = nn.Softmax(dim=1)
 
     def forward(self, x):
         """
@@ -135,14 +174,24 @@ class Net_BN(nn.Module):
         x = self.pool3(x)
 
         x = self.prelu4_1(self.conv4_1(x))
-        x = self.prelu4_2(self.conv4_2(x))
 
-        x = x.view(-1, 80 * 4 * 4)
-        x = self.preluip1(self.ip1(x))
+        ####### prediction branch #######
+        x_pred = self.prelu4_2(self.conv4_2(x))
 
-        x = self.preluip2(self.ip2(x))
+        x_pred = x_pred.view(-1, 80 * 4 * 4)
+        x_pred = self.preluip1(self.ip1(x_pred))
 
-        x = self.bn_ip3(x)
-        x = self.ip3(x)
+        x_pred = self.preluip2(self.ip2(x_pred))
+        x_pred = self.landmarks_bn(x_pred)
+        landmarks = self.landmarks(x_pred)
 
-        return x
+        ####### classification branch #######
+        x_cls = self.relu_conv4_2_cls(self.conv4_2_cls(x))
+
+        x_cls = x_cls.view(-1, 40 * 4 * 4)
+        x_cls = self.relu_ip1_cls(self.ip1_cls(x_cls))
+        x_cls = self.relu_ip2_cls(self.ip2_cls(x_cls))
+        face = self.ip3_cls(x_cls)
+
+        return landmarks, face
+        # return face

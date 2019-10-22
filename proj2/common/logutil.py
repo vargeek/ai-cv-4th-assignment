@@ -1,4 +1,3 @@
-# %%
 import logging
 import json
 import os
@@ -56,5 +55,6 @@ def curr_time_str():
 def get_struct_log(log, **kwargs):
     def _log(**_kwargs):
         _kwargs.update(kwargs)
+        _kwargs.update(_time=curr_time_str())
         log(json.dumps(_kwargs, cls=Encoder))
     return _log
