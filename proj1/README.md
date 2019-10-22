@@ -42,3 +42,7 @@
 `acc = 2.0/(1.0/acc_species + 1.0/acc_classes)`
 
 ![result](results/stage3/NFWTthCYScLXUJ3U01Cs0R/result.png)
+
+## 问题
+
+- 几次训练都有过拟现象，但是对数据进行增广后，`val_acc`不仅没提高，反而下降了。

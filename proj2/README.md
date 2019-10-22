@@ -75,3 +75,5 @@ python -m generate_train_test_list
 ### 4. 对于 loss 的处理
 
 ### 5. 关于检测
+
+![result](results/stage3/iIdJju2t1wfI4TSaPqBbDB/result.png)
