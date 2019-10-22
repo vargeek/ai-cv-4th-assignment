@@ -58,7 +58,8 @@ class ToTensor(object):
     def __call__(self, sample):
         image, landmarks = sample['image'], sample['landmarks']
 
-        image = np.expand_dims(image, axis=0)
+        while len(image.shape) < 3:
+            image = np.expand_dims(image, axis=0)
 
         new_sample = {**sample}
         new_sample['image'] = torch.from_numpy(image)
