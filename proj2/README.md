@@ -52,6 +52,14 @@ python -m generate_train_test_list
 
 ![result](results/stage2/qLD2TuH3S0ZuuMYPwBgvPP/result.png)
 
+`ResNet`
+
+![result](results/stage2/EWNmTY2rIsvFs1tLGZPyNg/result.png)
+
+下一步尝试：
+
+- 分辨出每个像素属不属于标注点，然后再根据分类结果做回归？
+
 ### 1. 关于数据
 
 ### 2. 关于训练方法
